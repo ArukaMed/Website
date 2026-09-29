@@ -1,0 +1,97 @@
+import type { NewTenantRecord, NewEmployeeRecord } from "./schema";
+
+export const ARUKA_MED_TENANT_ID = "11111111-1111-4111-a111-111111111111";
+export const AMIT_SHARMA_EMPLOYEE_ID = "22222222-2222-4222-a222-222222222222";
+
+export const arukaMedTenantSeed: NewTenantRecord = {
+  id: ARUKA_MED_TENANT_ID,
+  name: "Aruka Med",
+  slug: "arukamed",
+  customDomain: "arukamed.com",
+  logoUrlLight: "/assets/logos/Wordmark_lightBG.png",
+  logoUrlDark: "/assets/logos/Wordmark_darkBG.png",
+  markUrl: "/assets/logos/logo.png",
+  faviconUrl: "/assets/logos/logo.png",
+  status: "ACTIVE",
+  themeConfig: {
+    primary: "#1B3F73",
+    primaryHover: "#12305C",
+    deepNavy: "#0C2244",
+    accentGold: "#C8963E",
+    accentLight: "#E3B15F",
+    surface: "#FFFFFF",
+    ivoryBg: "#FBFAF7",
+    textInk: "#101C2E",
+    borderRadius: 10,
+    buttonStyle: "rounded",
+    fontDisplay: "serif",
+    fontBody: "'Public Sans', system-ui, -apple-system, sans-serif",
+  },
+  complianceInfo: {
+    legalEntityName: "Aruka Med Pharmaceuticals Private Limited",
+    gstin: "09ABCDE1234F1Z5",
+    drugLicences: [
+      { label: "Wholesale Drug Licence Form 20B", number: "UP-KNP-20B-000000" },
+      { label: "Wholesale Drug Licence Form 21B", number: "UP-KNP-21B-000000" },
+    ],
+    warehouseAddress: {
+      line1: "Plot 24, Industrial Area, Sector 7",
+      city: "Kanpur",
+      state: "Uttar Pradesh",
+      pincode: "208001",
+      country: "India",
+      googleMapsEmbedUrl: "",
+    },
+    coldChainCertification: {
+      certifier: "ISO/GDP Active Pharma Logistics",
+      certificateNumber: "CC-IN-2026-902",
+      rangeMinCelsius: 2.0,
+      rangeMaxCelsius: 8.0,
+      failoverProtocol: "Dual automated generator failover with real-time temperature logging",
+    },
+  },
+  commercialSettings: {
+    catalogPdfUrl: "https://www.arukamed.com/files/wholesale-catalog.pdf",
+    catalogSizeLabel: "2.4 MB",
+    catalogUpdatedDate: "October 2026",
+    orderDeskEmail: "orders@arukamed.com",
+    creditDeskEmail: "credit@arukamed.com",
+    centralHelplinePhone: "+915120000000",
+    minimumOrderValueINR: 25000,
+    creditTermsSummary: "Credit terms on approval. Prepaid and 15-day credit options available for verified accounts.",
+    defaultWhatsappTemplate:
+      "Hello {name}, I scanned your Aruka Med digital card. I would like to inquire about bulk wholesale medicine supply.",
+  },
+  featureFlags: {
+    enableCatalogDownload: true,
+    enableVCardSave: true,
+    enableLeadCaptureForm: true,
+    enablePoUploadEmail: true,
+    enableCreditApplicationModal: true,
+    enableLiveColdRoomTrace: true,
+  },
+};
+
+export const amitSharmaEmployeeSeed: NewEmployeeRecord = {
+  id: AMIT_SHARMA_EMPLOYEE_ID,
+  tenantId: ARUKA_MED_TENANT_ID,
+  slug: "amit-sharma-4k7q",
+  firstName: "Amit",
+  lastName: "Sharma",
+  avatarUrl: null,
+  designation: "Territory Sales Manager, Institutional and Retail Supply",
+  division: "Sales",
+  territoryRegion: "North Zone",
+  phoneNumber: "+919876543210",
+  whatsappNumber: "+919876543210",
+  email: "amit.sharma@arukamed.com",
+  linkedinUrl: "https://www.linkedin.com/company/arukamed",
+  officeExtension: "104",
+  customWhatsappTemplate:
+    "Hello {name}, I scanned your Aruka Med visiting card. I would like to inquire about bulk wholesale medicine supply.",
+  customRateCardUrl: null,
+  isActive: true,
+  scanCount: 142,
+  vcardDownloads: 68,
+  whatsappClicks: 53,
+};

@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #1B3F75;
+  --deep: #0E2444;
+  --accent: #9A6522;
+  --accent-light: #E3B15F;
+  --radius: 10px;
+  --btn-radius: 10px;
+  --bg: #FFFFFF;
+  --surface: #F3F6FB;
+  --card: #FFFFFF;
+  --text: #16253F;
+  --muted: #55627A;
+  --line: #DAE1EC;
+  --heading: var(--primary);
+  --btn-bg: var(--primary);
+  --btn-fg: #fff;
+  --link: var(--primary);
+  --accent-t: var(--accent);
+}
+
+[data-theme="dark"], :root[data-theme="dark"] {
+  --bg: #0A1730;
+  --surface: #0F1F3B;
+  --card: #12264A;
+  --text: #E6ECF6;
+  --muted: #9FB0C9;
+  --line: #243C66;
+  --heading: #F1F5FB;
+  --btn-bg: var(--accent-light);
+  --btn-fg: #0E2444;
+  --link: #9CC0F5;
+  --accent-t: var(--accent-light);
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 12px 22px;
+  border-radius: var(--btn-radius);
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-primary {
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+}
+.btn-primary:hover {
+  filter: brightness(1.08);
+}
+
+.btn-gold {
+  background: var(--accent-light);
+  color: var(--deep);
+}
+.btn-gold:hover {
+  filter: brightness(1.06);
+}
+
+.btn-line {
+  background: transparent;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+.btn-line:hover {
+  border-color: var(--accent-light);
+  color: var(--accent-light);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--heading);
+  border-color: var(--line);
+}
+.btn-ghost:hover {
+  border-color: var(--accent-t);
+}
+
+.btn-sm {
+  min-height: 40px;
+  padding: 8px 16px;
+  font-size: 14px;
+}

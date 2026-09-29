@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --navy: #1B3F73;
+  --navy-mid: #12305C;
+  --navy-deep: #0C2244;
+  --navy-tint: #EAF0F8;
+  --gold: #C8963E;
+  --gold-deep: #8A5A1F;
+  --gold-tint: #F6EEDD;
+  --ivory: #FBFAF7;
+  --surface: #FFFFFF;
+  --ink: #101C2E;
+  --heading: #1B3F73;
+  --muted: #576277;
+  --line: #E4E0D6;
+  --page: #E6EBF2;
+  --primary: #1B3F73;
+  --primary-hover: #12305C;
+  --on-primary: #FFFFFF;
+  --btn-icon: #C8963E;
+  --wa: #1E9E50;
+  --err: #B3261E;
+  --ok: #1E7A46;
+  --hdr-a: #12305C;
+  --hdr-b: #0C2244;
+  --glow: rgba(200, 150, 62, 0.18);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --navy: #5C8AD0;
+  --navy-mid: #17396B;
+  --navy-deep: #06142B;
+  --navy-tint: rgba(255, 255, 255, 0.08);
+  --gold: #D9A950;
+  --gold-deep: #E2B860;
+  --gold-tint: #2A2A2A;
+  --ivory: #0A1D3B;
+  --surface: #102A52;
+  --ink: #EEF3FA;
+  --heading: #F3F6FB;
+  --muted: #A5B3CA;
+  --line: rgba(255, 255, 255, 0.13);
+  --page: #050F20;
+  --primary: #D9A950;
+  --primary-hover: #E6B963;
+  --on-primary: #0A1D3B;
+  --btn-icon: #0A1D3B;
+  --wa: #39D27F;
+  --err: #FF9C94;
+  --ok: #7FE0A8;
+  --hdr-a: #123063;
+  --hdr-b: #0A1D3B;
+  --glow: rgba(217, 169, 80, 0.2);
+  color-scheme: dark;
+}
+
+[data-theme="dark"] .mark-tile {
+  background: #F3F6FB;
+  border-radius: 14px;
+  padding: 7px;
+}
+
+html {
+  background: var(--page);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--page);
+  margin: 0;
+}
+
+dialog {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  max-width: none;
+  max-height: none;
+}
+
+dialog::backdrop {
+  background: rgba(3, 10, 24, 0.62);
+}
+
+.hdr-glow {
+  background: radial-gradient(120% 90% at 100% 0%, var(--glow) 0%, transparent 55%),
+    linear-gradient(160deg, var(--hdr-a) 0%, var(--hdr-b) 100%);
+}
+
+@layer components {
+  .row {
+    @apply flex min-h-[64px] w-full items-center gap-3.5 px-4 py-3 text-left transition-colors hover:bg-ivory active:bg-navy-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary;
+  }
+  .tile {
+    @apply grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-navy-tint text-heading;
+  }
+  .qbtn {
+    @apply flex min-h-[76px] flex-col items-center justify-center gap-1.5 rounded-2xl border border-line bg-surface px-1.5 py-3 text-center text-[12.5px] font-semibold leading-tight text-heading transition-colors hover:bg-navy-tint active:bg-navy-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ivory;
+  }
+  .chip {
+    @apply inline-flex items-center rounded-full border border-line bg-surface px-3 py-1.5 text-[13px] font-semibold text-heading;
+  }
+  .field {
+    @apply block w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-[16px] text-ink placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary;
+  }
+  .lbl {
+    @apply mb-1.5 block text-[13px] font-semibold text-ink;
+  }
+  .ghost {
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 text-[13.5px] font-semibold text-heading transition-colors hover:bg-navy-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary;
+  }
+}
