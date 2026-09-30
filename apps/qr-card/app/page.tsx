@@ -2,19 +2,34 @@ import { dataStore } from "@aegis/database";
 import { VisitingCard } from "@/components/visiting-card";
 import { ThemeInjector } from "@aegis/ui";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 
 export default async function DefaultCardPage() {
-  const tenant = await dataStore.getTenantBySlug("arukamed");
-  const employee = await dataStore.getEmployeeBySlug("arukamed", "amit-sharma-4k7q");
+  const headersList = await headers();
+  const host = headersList.get("host") || "";
+  const baseDomain = host.replace(/^connect\./i, "").split(":")[0];
+  const defaultSlug = process.env.DEFAULT_TENANT_SLUG || "arukamed";
 
-  if (!tenant || !employee) {
+  let tenant = await dataStore.getTenantByDomain(baseDomain);
+  if (!tenant) {
+    tenant = await dataStore.getTenantBySlug(defaultSlug);
+  }
+
+  if (!tenant) {
+    notFound();
+  }
+
+  const employees = await dataStore.getAllEmployees(tenant.slug);
+  const employee = employees.find((e) => e.isActive) || employees[0];
+
+  if (!employee) {
     notFound();
   }
 
   // Increment scan count
-  await dataStore.incrementStat("arukamed", "amit-sharma-4k7q", "scan");
+  await dataStore.incrementStat(tenant.slug, employee.slug, "scan");
 
-  const vcardUrl = `/api/vcard/arukamed/amit-sharma-4k7q`;
+  const vcardUrl = `/api/vcard/${tenant.slug}/${employee.slug}`;
 
   return (
     <>
@@ -27,3 +42,4 @@ export default async function DefaultCardPage() {
     </>
   );
 }
+

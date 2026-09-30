@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyHoneypot, sanitizeHtmlText, leadRateLimiter } from "@aegis/auth";
+import { verifyHoneypot, sanitizeHtmlText, leadRateLimiter, sendLeadAlertEmail } from "@aegis/auth";
 import { LeadInquiryInputSchema } from "@aegis/types";
+import { dataStore } from "@aegis/database";
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,9 +24,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: "Inquiry received" });
     }
 
+    const tenantSlug = body.tenantSlug || process.env.DEFAULT_TENANT_SLUG || "arukamed";
+    const tenant = await dataStore.getTenantBySlug(tenantSlug);
+
     // 2. Validate using Zod schema
     const parsed = LeadInquiryInputSchema.safeParse({
-      tenantSlug: body.tenantSlug || "arukamed",
+      tenantSlug,
       institutionName: sanitizeHtmlText(body.institutionName),
       businessType: sanitizeHtmlText(body.businessType),
       contactName: sanitizeHtmlText(body.contactName),
@@ -40,12 +44,43 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: firstError }, { status: 400 });
     }
 
+    // 3. Persist lead record
+    const savedLead = await dataStore.createLead(tenantSlug, {
+      institutionName: parsed.data.institutionName,
+      businessType: parsed.data.businessType,
+      contactName: parsed.data.contactName,
+      phone: parsed.data.phone,
+      drugLicenceNumber: parsed.data.drugLicenceNumber || null,
+      requirementCategory: parsed.data.requirementCategory || null,
+      sourceUrl: parsed.data.sourceUrl,
+      userAgent: req.headers.get("user-agent") || null,
+      ipAddress: req.headers.get("x-forwarded-for") || null,
+    });
+
+    // 4. Send background notification email via Resend
+    const recipientEmail = tenant?.commercialSettings?.orderDeskEmail || "orders@arukamed.com";
+    sendLeadAlertEmail({
+      toEmail: recipientEmail,
+      tenantName: tenant ? tenant.name : "Aruka Med",
+      sourceType: "WEBSITE_INQUIRY",
+      institutionName: parsed.data.institutionName,
+      businessType: parsed.data.businessType,
+      contactName: parsed.data.contactName,
+      phone: parsed.data.phone,
+      drugLicence: parsed.data.drugLicenceNumber,
+      categoryOrVolume: parsed.data.requirementCategory,
+      sourceUrl: parsed.data.sourceUrl,
+    }).catch(() => {
+      // Non-blocking notification
+    });
+
     return NextResponse.json({
       success: true,
       message: "Lead inquiry registered successfully",
-      lead: parsed.data,
+      leadId: savedLead.id,
     });
   } catch {
     return NextResponse.json({ message: "Invalid payload" }, { status: 400 });
   }
 }
+

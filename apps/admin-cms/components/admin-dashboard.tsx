@@ -7,11 +7,13 @@ import { getCommercialPrintSpec } from "@/lib/qr-engine";
 interface AdminDashboardProps {
   initialTenant: Tenant;
   initialEmployees: Employee[];
+  initialLeads?: any[];
 }
 
-export function AdminDashboard({ initialTenant, initialEmployees }: AdminDashboardProps) {
+export function AdminDashboard({ initialTenant, initialEmployees, initialLeads = [] }: AdminDashboardProps) {
   const [tenant, setTenant] = useState<Tenant>(initialTenant);
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
+  const [leads, setLeads] = useState<any[]>(initialLeads);
   const [activeTab, setActiveTab] = useState<"employees" | "qr" | "preview" | "theme" | "leads">("employees");
   const [selectedEmployeeSlug, setSelectedEmployeeSlug] = useState<string>(initialEmployees[0]?.slug || "");
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -31,7 +33,7 @@ export function AdminDashboard({ initialTenant, initialEmployees }: AdminDashboa
     setTimeout(() => setToastMsg(null), 2500);
   };
 
-  const handleAddEmployee = (e: React.FormEvent) => {
+  const handleAddEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
     const slug = newSlug.trim() || `${newFirstName.toLowerCase()}-${newLastName.toLowerCase()}-${Math.random().toString(36).substring(2, 6)}`;
     const newEmp: Employee = {
@@ -63,6 +65,26 @@ export function AdminDashboard({ initialTenant, initialEmployees }: AdminDashboa
     setIsAddOpen(false);
     showToast(`Employee ${newFirstName} ${newLastName} onboarded!`);
 
+    // Persist to server API
+    try {
+      await fetch("/api/employees", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantSlug: tenant.slug,
+          firstName: newFirstName,
+          lastName: newLastName,
+          designation: newDesignation,
+          territoryRegion: newTerritory,
+          phoneNumber: newPhone,
+          email: newEmail,
+          slug,
+        }),
+      });
+    } catch {
+      // Local state already updated
+    }
+
     // Reset
     setNewFirstName("");
     setNewLastName("");
@@ -72,21 +94,35 @@ export function AdminDashboard({ initialTenant, initialEmployees }: AdminDashboa
     setNewSlug("");
   };
 
-  const toggleEmployeeStatus = (id: string) => {
+  const toggleEmployeeStatus = async (id: string) => {
+    const emp = employees.find((e) => e.id === id);
+    if (!emp) return;
+
+    const nextState = !emp.isActive;
+
     setEmployees((prev) =>
-      prev.map((emp) => {
-        if (emp.id === id) {
-          const nextState = !emp.isActive;
-          showToast(
-            nextState
-              ? `${emp.firstName}'s card activated.`
-              : `${emp.firstName} offboarded. Card QR now routes to central brand desk.`
-          );
-          return { ...emp, isActive: nextState };
-        }
-        return emp;
-      })
+      prev.map((e) => (e.id === id ? { ...e, isActive: nextState } : e))
     );
+
+    showToast(
+      nextState
+        ? `${emp.firstName}'s card activated.`
+        : `${emp.firstName} offboarded. Card QR now routes to central brand desk.`
+    );
+
+    try {
+      await fetch("/api/employees", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantSlug: tenant.slug,
+          employeeSlug: emp.slug,
+          patch: { isActive: nextState },
+        }),
+      });
+    } catch {
+      // Local state already updated
+    }
   };
 
   const handleColorChange = (key: keyof TenantThemeConfig, color: string) => {
@@ -501,48 +537,79 @@ export function AdminDashboard({ initialTenant, initialEmployees }: AdminDashboa
         {activeTab === "leads" && (
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-slate-900">Captured Wholesale B2B Inquiries</h3>
-              <button
-                onClick={() => showToast("Exporting leads to CSV...")}
-                className="bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold px-3.5 py-1.5 rounded-lg"
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Captured Wholesale B2B Inquiries</h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Inquiries captured via digital visiting cards and public marketing pages with sales rep attribution.
+                </p>
+              </div>
+              <a
+                href={`/api/leads?tenant=${tenant.slug}&format=csv`}
+                download
+                className="bg-navy-deep hover:bg-slate-800 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 transition-colors"
               >
-                Export CSV 📥
-              </button>
+                <span>Export CSV</span>
+                <span>📥</span>
+              </a>
             </div>
-            <p className="text-xs text-slate-500 mb-6">
-              Inquiries captured via digital visiting cards and public marketing pages with sales rep attribution.
-            </p>
 
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold border-b">
-                <tr>
-                  <th className="py-2.5 px-3">Date</th>
-                  <th className="py-2.5 px-3">Institution</th>
-                  <th className="py-2.5 px-3">Type</th>
-                  <th className="py-2.5 px-3">Contact</th>
-                  <th className="py-2.5 px-3">Phone</th>
-                  <th className="py-2.5 px-3">Attributed Rep</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y text-xs">
-                <tr>
-                  <td className="py-3 px-3 text-slate-400">Today, 14:22</td>
-                  <td className="py-3 px-3 font-semibold text-slate-900">Apollo Medics Hospital</td>
-                  <td className="py-3 px-3">Hospital</td>
-                  <td className="py-3 px-3">Dr. K. Saxena</td>
-                  <td className="py-3 px-3 font-mono">+91 98390 11223</td>
-                  <td className="py-3 px-3 font-semibold text-navy">Amit Sharma (North)</td>
-                </tr>
-                <tr>
-                  <td className="py-3 px-3 text-slate-400">Yesterday, 11:05</td>
-                  <td className="py-3 px-3 font-semibold text-slate-900">Gupta Chemist & Surgicals</td>
-                  <td className="py-3 px-3">Pharmacy</td>
-                  <td className="py-3 px-3">Rajesh Gupta</td>
-                  <td className="py-3 px-3 font-mono">+91 94150 99881</td>
-                  <td className="py-3 px-3 font-semibold text-navy">Amit Sharma (North)</td>
-                </tr>
-              </tbody>
-            </table>
+            {leads.length === 0 ? (
+              <div className="py-12 text-center text-slate-400 text-xs">
+                No wholesale inquiries received yet. Inquiries from the website RFQ and digital visiting cards will appear here in real time.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold border-b">
+                    <tr>
+                      <th className="py-2.5 px-3">Date</th>
+                      <th className="py-2.5 px-3">Institution</th>
+                      <th className="py-2.5 px-3">Type</th>
+                      <th className="py-2.5 px-3">Contact</th>
+                      <th className="py-2.5 px-3">Phone</th>
+                      <th className="py-2.5 px-3">Licence / GSTIN</th>
+                      <th className="py-2.5 px-3">Requirement</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y text-xs">
+                    {leads.map((lead: any) => {
+                      const rep = employees.find((e) => e.id === lead.employeeId);
+                      return (
+                        <tr key={lead.id} className="hover:bg-slate-50/50">
+                          <td className="py-3 px-3 text-slate-400 whitespace-nowrap">
+                            {new Date(lead.createdAt).toLocaleDateString("en-IN", {
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </td>
+                          <td className="py-3 px-3 font-semibold text-slate-900">
+                            {lead.institutionName}
+                            {rep && (
+                              <div className="text-[11px] font-normal text-navy">
+                                Rep: {rep.firstName} {rep.lastName} ({rep.territoryRegion})
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-3 px-3 whitespace-nowrap">{lead.businessType}</td>
+                          <td className="py-3 px-3">{lead.contactName}</td>
+                          <td className="py-3 px-3 font-mono font-semibold text-blue-700 whitespace-nowrap">
+                            <a href={`tel:${lead.phone}`}>{lead.phone}</a>
+                          </td>
+                          <td className="py-3 px-3 font-mono text-[11px] text-slate-600">
+                            {lead.drugLicenceNumber || lead.gstin || "—"}
+                          </td>
+                          <td className="py-3 px-3 text-slate-700">
+                            {lead.requirementCategory || lead.estimatedMonthlyVolume || "General Wholesale"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>

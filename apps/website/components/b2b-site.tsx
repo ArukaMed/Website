@@ -162,7 +162,7 @@ export function B2BSite({ tenant }: B2BSiteProps) {
               Therapeutic Segments
             </a>
             <a href="#why" className="hover:text-[var(--primary)] transition-colors">
-              Why Aruka Med
+              Why {tenant.name}
             </a>
             <a href="#coldchain" className="hover:text-[var(--primary)] transition-colors">
               Cold Chain Logistics
@@ -199,7 +199,7 @@ export function B2BSite({ tenant }: B2BSiteProps) {
               Therapeutic Segments
             </a>
             <a href="#why" onClick={() => setMobileMenuOpen(false)} className="py-2">
-              Why Aruka Med
+              Why {tenant.name}
             </a>
             <a href="#coldchain" onClick={() => setMobileMenuOpen(false)} className="py-2">
               Cold Chain Logistics
@@ -479,10 +479,10 @@ export function B2BSite({ tenant }: B2BSiteProps) {
         <div className="wrap grid lg:grid-cols-[1.1fr_0.9fr] gap-12 items-start">
           <div>
             <h2 className="text-3xl font-bold font-display text-[var(--heading)]">
-              About Aruka Med
+              About {tenant.name}
             </h2>
             <p className="mt-4 text-[var(--muted)] text-base leading-relaxed">
-              Aruka Med Pharmaceuticals is a licensed B2B wholesale pharmaceutical distributor supplying genuine, batch-tracked medicines to hospitals, nursing homes, clinics, and retail pharmacies.
+              {tenant.complianceInfo?.legalEntityName || tenant.name} is a licensed B2B wholesale pharmaceutical distributor supplying genuine, batch-tracked medicines to hospitals, nursing homes, clinics, and retail pharmacies.
             </p>
             <p className="mt-3 text-[var(--muted)] text-base leading-relaxed">
               We operate strictly under wholesale statutory regulations, enforcing mandatory Form 20B/21B and GSTIN verification on all trade accounts.
