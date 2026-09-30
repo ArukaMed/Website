@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dataStore } from "@aegis/database";
 
+export const dynamic = "force-dynamic";
+
 function foldLine(line: string): string {
   const maxLength = 75;
   if (line.length <= maxLength) return line;
@@ -29,9 +31,15 @@ export async function GET(
   { params }: { params: Promise<{ tenant: string; slug: string }> }
 ) {
   const { tenant: tenantSlug, slug: employeeSlug } = await params;
+  let tenant: any = null;
+  let employee: any = null;
 
-  const tenant = await dataStore.getTenantBySlug(tenantSlug);
-  const employee = await dataStore.getEmployeeBySlug(tenantSlug, employeeSlug);
+  try {
+    tenant = await dataStore.getTenantBySlug(tenantSlug);
+    employee = await dataStore.getEmployeeBySlug(tenantSlug, employeeSlug);
+  } catch (err) {
+    console.error("dataStore error in vcard route:", err);
+  }
 
   if (!tenant || !employee || !employee.isActive) {
     return new NextResponse("Contact not found or inactive", { status: 404 });
@@ -66,8 +74,8 @@ export async function GET(
     lines.push(foldLine(`X-SOCIALPROFILE;TYPE=linkedin:${employee.linkedinUrl}`));
   }
 
-  const licenses = tenant.complianceInfo.drugLicences
-    .map((l) => `${l.label}: ${l.number}`)
+  const licenses = (tenant.complianceInfo?.drugLicences || [])
+    .map((l: any) => `${l.label}: ${l.number}`)
     .join(" | ");
 
   const combinedNote = `Territory: ${employee.territoryRegion} | GSTIN: ${tenant.complianceInfo.gstin} | ${licenses}`;

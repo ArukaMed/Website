@@ -193,15 +193,6 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
       .join("\r\n") + "\r\n";
   }, [employee, tenant, fullName, websiteUrl, note]);
 
-  const androidIntentUrl = useMemo(() => {
-    const addr = tenant.complianceInfo.warehouseAddress;
-    const fullAddress = `${addr.line1}, ${addr.city}, ${addr.state} ${addr.pincode}`;
-    const enc = (val: string) => encodeURIComponent(val || "");
-    const fallback = vcardUrl.startsWith("http") ? vcardUrl : `https://${primaryDomain}${vcardUrl}`;
-
-    return `intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/contact;S.name=${enc(fullName)};S.phone=${enc(employee.phoneNumber)};S.secondary_phone=${enc(employee.whatsappNumber || "")};S.email=${enc(employee.email)};S.company=${enc(tenant.name)};S.job_title=${enc(employee.designation)};S.postal=${enc(fullAddress)};S.notes=${enc(note)};S.browser_fallback_url=${enc(fallback)};end`;
-  }, [fullName, employee, tenant, note, vcardUrl, primaryDomain]);
-
   // Pre-generate QR Code of vCard for zero-download camera scan import
   useEffect(() => {
     if (!vcfContent) return;
@@ -219,21 +210,7 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
   }, [vcfContent]);
 
   const handleSaveContact = async (e?: React.MouseEvent<HTMLAnchorElement>) => {
-    // 1. Android / Samsung Devices: Direct OS Intent opens native Contacts app automatically!
-    const isAndroid =
-      devicePlatform === "android" ||
-      (typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent));
-
-    if (isAndroid) {
-      // Allow browser to follow href={androidIntentUrl} naturally without e.preventDefault()
-      // This directly hands off to Google Contacts / Samsung Contacts app!
-      return;
-    }
-
-    if (e) e.preventDefault();
-
-    // 2. iOS / Safari: Native OS Share Sheet via Web Share API
-    // Check both standard text/vcard and x-vcard without parameters
+    // 1. Primary: Native OS Share Sheet via Web Share API (iOS Safari & supported browsers)
     if (
       typeof navigator !== "undefined" &&
       typeof navigator.share === "function" &&
@@ -243,6 +220,7 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
         try {
           const file = new File([vcfContent], cleanFilename, { type: mime });
           if (navigator.canShare({ files: [file] })) {
+            if (e) e.preventDefault();
             await navigator.share({
               files: [file],
               title: fullName,
@@ -252,26 +230,30 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
           }
         } catch (err: any) {
           if (err && err.name === "AbortError") {
-            // User intentionally closed the native share tray
+            if (e) e.preventDefault();
             return;
           }
         }
       }
     }
 
-    // 3. Fallback: Trigger server-side download with proper headers
+    // 2. Direct Fallback: Client-Side Blob URL Download (instant, 0ms, zero server/404 risk)
+    if (e) e.preventDefault();
     try {
+      const blob = new Blob([vcfContent], { type: "text/vcard;charset=utf-8" });
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.href = vcardUrl;
+      link.href = url;
       link.setAttribute("download", cleanFilename);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      setTimeout(() => window.URL.revokeObjectURL(url), 2000);
     } catch {
       window.location.href = vcardUrl;
     }
 
-    // Immediately open the Guided Action Modal so user doesn't have to search in Files
+    // Open the Guided Action Modal so user sees the instruction banner immediately
     setIsSaveModalOpen(true);
   };
 
@@ -433,7 +415,8 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
           {tenant.featureFlags.enableVCardSave && (
             <a
               id="save-contact"
-              href={devicePlatform === "android" ? androidIntentUrl : vcardUrl}
+              href={vcardUrl}
+              download={cleanFilename}
               onClick={handleSaveContact}
               className="flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-primary text-[16px] font-bold text-on-primary shadow-[0_6px_16px_-6px_rgba(12,34,68,0.55)] transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ivory"
             >
@@ -916,16 +899,20 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
                     <div className="flex items-center gap-2 text-[14px] font-bold text-heading">
                       <span className="text-base">🤖</span> On Android &amp; Samsung:
                     </div>
-                    <p className="mt-1 text-[13px] text-muted">
-                      Tap below to open your phone&apos;s Contacts app directly with details filled in:
-                    </p>
-                    <a
-                      href={androidIntentUrl}
-                      className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-primary py-2.5 px-3 text-[13.5px] font-bold text-on-primary hover:bg-primary-hover shadow-sm transition-colors"
-                    >
-                      <svg className="h-4 w-4" aria-hidden="true"><use href="#i-user-plus" /></svg>
-                      <span>Open in Contacts App</span>
-                    </a>
+                    <ol className="mt-2 space-y-2 text-[13px] text-ink leading-snug">
+                      <li className="flex items-start gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/20 text-[11px] font-bold text-gold">1</span>
+                        <span>Look for the <strong>download banner</strong> at the bottom or top of your screen.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/20 text-[11px] font-bold text-gold">2</span>
+                        <span>Tap <strong>&ldquo;Open&rdquo;</strong>.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/20 text-[11px] font-bold text-gold">3</span>
+                        <span>Choose <strong>&ldquo;Contacts&rdquo;</strong> and tap <strong>&ldquo;Save&rdquo;</strong>.</span>
+                      </li>
+                    </ol>
                   </div>
                 ) : (
                   <div>
