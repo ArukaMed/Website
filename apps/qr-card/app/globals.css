@@ -35,26 +35,26 @@
   --navy-mid: #17396B;
   --navy-deep: #06142B;
   --navy-tint: rgba(255, 255, 255, 0.08);
-  --gold: #DAA950;
-  --gold-deep: #DAA950;
+  --gold: #D9A950;
+  --gold-deep: #E2B860;
   --gold-tint: #2A2A2A;
   --ivory: #0A1D3B;
-  --surface: #112A52;
-  --ink: #C8D6E8;
-  --heading: #FFFFFF;
-  --muted: #8EA5C6;
-  --line: #243E69;
+  --surface: #102A52;
+  --ink: #EEF3FA;
+  --heading: #F3F6FB;
+  --muted: #A5B3CA;
+  --line: rgba(255, 255, 255, 0.13);
   --page: #050F20;
-  --primary: #DAA950;
+  --primary: #D9A950;
   --primary-hover: #E6B963;
   --on-primary: #0A1D3B;
   --btn-icon: #0A1D3B;
-  --wa: #25D366;
+  --wa: #39D27F;
   --err: #FF9C94;
   --ok: #7FE0A8;
-  --hdr-a: #122E5D;
+  --hdr-a: #123063;
   --hdr-b: #0A1D3B;
-  --glow: rgba(218, 169, 80, 0.12);
+  --glow: rgba(217, 169, 80, 0.20);
   color-scheme: dark;
 }
 

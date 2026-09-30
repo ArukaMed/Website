@@ -258,31 +258,31 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
         </header>
 
         {/* Profile Section */}
-        <section className="relative -mt-[56px] px-6" aria-labelledby="person-name">
+        <section className="relative -mt-[58px] px-6" aria-labelledby="person-name">
           <div
             id="avatar"
-            className="grid h-[108px] w-[108px] place-items-center overflow-hidden rounded-full bg-navy-mid border-[2.5px] border-gold text-[32px] font-light text-white shadow-xl"
+            className="grid h-[112px] w-[112px] place-items-center overflow-hidden rounded-full bg-navy-mid text-[34px] font-light text-white ring-2 ring-gold ring-offset-4 ring-offset-ivory"
             role="img"
             aria-label={`Profile photo of ${fullName}`}
           >
             {employee.avatarUrl ? (
               <img src={employee.avatarUrl} alt={fullName} className="h-full w-full object-cover" />
             ) : (
-              <span className="select-none font-semibold text-3xl tracking-wider text-white">{initials}</span>
+              <span className="select-none font-light text-[34px] tracking-wider text-white">{initials}</span>
             )}
           </div>
 
-          <h1 id="person-name" className="mt-4 text-[28px] font-bold leading-[1.15] text-heading">
+          <h1 id="person-name" className="mt-4 text-[27px] font-extrabold leading-[1.15] text-heading">
             {fullName}
           </h1>
           <p className="mt-1.5 text-[15px] leading-snug text-ink">{employee.designation}</p>
-          <p className="mt-1.5 flex items-center gap-1.5 text-[14px] font-semibold text-gold-deep">
+          <p className="mt-1.5 flex items-center gap-1.5 text-[13.5px] font-semibold text-gold-deep">
             <svg className="h-4 w-4 shrink-0 text-gold-deep" aria-hidden="true">
               <use href="#i-pin" />
             </svg>
             <span>{employee.territoryRegion}</span>
           </p>
-          <p className="mt-2 text-[14px] font-medium text-muted">{tenant.name}</p>
+          <p className="mt-3 text-[13.5px] text-muted">{tenant.name}</p>
         </section>
 
         {/* Primary Actions: Save Contact & Fast Reach */}
@@ -337,21 +337,21 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
                 <use href="#i-shield" />
               </svg>
               <span className="mt-2 text-[12.5px] font-bold leading-tight text-heading">Form 20B and 21B</span>
-              <span className="mt-1 text-[11px] leading-tight text-muted">Drug licence compliant</span>
+              <span className="mt-1 text-[11.5px] leading-tight text-muted">Drug licence compliant</span>
             </li>
             <li className="flex flex-col items-center px-2 py-4 text-center">
               <svg className="h-6 w-6 text-gold-deep" aria-hidden="true">
                 <use href="#i-snow" />
               </svg>
               <span className="mt-2 text-[12.5px] font-bold leading-tight text-heading">2°C to 8°C</span>
-              <span className="mt-1 text-[11px] leading-tight text-muted">Cold chain storage</span>
+              <span className="mt-1 text-[11.5px] leading-tight text-muted">Cold chain storage</span>
             </li>
             <li className="flex flex-col items-center px-2 py-4 text-center">
               <svg className="h-6 w-6 text-gold-deep" aria-hidden="true">
                 <use href="#i-truck" />
               </svg>
               <span className="mt-2 text-[12.5px] font-bold leading-tight text-heading">Same day</span>
-              <span className="mt-1 text-[11px] leading-tight text-muted">or 24-hour dispatch</span>
+              <span className="mt-1 text-[11.5px] leading-tight text-muted">or 24-hour dispatch</span>
             </li>
           </ul>
         </section>
@@ -575,14 +575,14 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
 
         {/* Footer */}
         <footer className="mt-10 border-t border-line px-6 pt-6 pb-10 text-center">
-          <div className="mx-auto flex justify-center items-center mb-3">
+          <span className="mark-tile mx-auto inline-grid place-items-center">
             <img
               src="/assets/logos/logo.png"
               alt="Aruka Med"
-              className="h-16 w-16 sm:h-20 sm:w-20 object-contain drop-shadow-md"
+              className="h-9 w-9 object-contain"
             />
-          </div>
-          <p className="text-[14px] font-bold text-heading">
+          </span>
+          <p className="mt-3 text-[13px] font-semibold text-heading">
             Aruka Med
           </p>
           <p className="mt-1 text-[12px] text-muted">
