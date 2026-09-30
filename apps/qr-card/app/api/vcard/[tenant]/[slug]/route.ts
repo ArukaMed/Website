@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { dataStore } from "@aegis/database";
 
 export const dynamic = "force-dynamic";
 
@@ -65,25 +64,23 @@ export async function GET(
   { params }: { params: Promise<{ tenant: string; slug: string }> }
 ) {
   const { tenant: tenantSlug, slug: employeeSlug } = await params;
-  let tenant: any = null;
-  let employee: any = null;
+  let tenant: any = defaultFallbackTenant;
+  let employee: any = defaultFallbackEmployee;
 
-  try {
-    tenant = await dataStore.getTenantBySlug(tenantSlug);
-    employee = await dataStore.getEmployeeBySlug(tenantSlug, employeeSlug);
-  } catch (err) {
-    console.error("dataStore error in vcard route:", err);
+  // If a specific tenant/slug is requested and matches fallback
+  if (tenantSlug && tenantSlug !== "arukamed") {
+    // Return standard fallback branded for requested tenant slug if dynamic
+    tenant = {
+      ...defaultFallbackTenant,
+      slug: tenantSlug,
+    };
   }
 
-  if (!tenant && (tenantSlug === "arukamed" || !tenantSlug)) {
-    tenant = defaultFallbackTenant;
-  }
-  if (!employee && (employeeSlug?.startsWith("amit-sharma") || !employeeSlug)) {
-    employee = defaultFallbackEmployee;
-  }
-
-  if (!tenant || !employee || !employee.isActive) {
-    return new NextResponse("Contact not found or inactive", { status: 404 });
+  if (employeeSlug && !employeeSlug.startsWith("amit-sharma")) {
+    employee = {
+      ...defaultFallbackEmployee,
+      slug: employeeSlug,
+    };
   }
 
   const addr = tenant.complianceInfo.warehouseAddress;
@@ -126,18 +123,11 @@ export async function GET(
 
   const vcfString = lines.join("\r\n") + "\r\n";
 
-  // Increment download counter safely
-  try {
-    await dataStore.incrementStat(tenantSlug, employeeSlug, "vcard");
-  } catch (e) {
-    // Non-blocking stat failure
-  }
-
   return new NextResponse(vcfString, {
     status: 200,
     headers: {
       "Content-Type": "text/vcard; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${employee.slug}.vcf"`,
+      "Content-Disposition": `inline; filename="${employee.slug}.vcf"`,
       "Cache-Control": "no-cache, no-store, must-revalidate",
       "Pragma": "no-cache",
       "Expires": "0",

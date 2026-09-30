@@ -225,50 +225,45 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
   }, [vcfContent]);
 
   const handleSaveContact = async (e?: React.MouseEvent<HTMLAnchorElement>) => {
-    // 1. Primary: Native OS Share Sheet via Web Share API (iOS Safari & supported browsers)
+    // 1. Primary: Native OS Share Sheet via Web Share API
+    // Passing a .vcf file to navigator.share() triggers an ACTION_SEND intent with MIME type text/vcard on Android
+    // and the native Contacts/Share prompt on iOS.
     if (
       typeof navigator !== "undefined" &&
       typeof navigator.share === "function" &&
       typeof navigator.canShare === "function"
     ) {
-      for (const mime of ["text/vcard", "text/x-vcard"]) {
-        try {
-          const file = new File([vcfContent], cleanFilename, { type: mime });
-          if (navigator.canShare({ files: [file] })) {
-            if (e) e.preventDefault();
-            await navigator.share({
-              files: [file],
-              title: fullName,
-              text: `Save contact: ${fullName}`,
-            });
-            return; // Native system sheet opened directly!
-          }
-        } catch (err: any) {
-          if (err && err.name === "AbortError") {
-            if (e) e.preventDefault();
-            return;
-          }
+      try {
+        const file = new File([vcfContent], cleanFilename, { type: "text/vcard" });
+        if (navigator.canShare({ files: [file] })) {
+          if (e) e.preventDefault();
+          await navigator.share({
+            files: [file],
+            title: fullName,
+          });
+          return; // Native system sheet / Contacts app opened directly!
+        }
+      } catch (err: any) {
+        if (err && err.name === "AbortError") {
+          if (e) e.preventDefault();
+          return; // User cancelled
         }
       }
     }
 
-    // 2. Direct Fallback: Client-Side Blob URL Download (instant, 0ms, zero server/404 risk)
-    if (e) e.preventDefault();
-    try {
-      const blob = new Blob([vcfContent], { type: "text/vcard;charset=utf-8" });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", cleanFilename);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setTimeout(() => window.URL.revokeObjectURL(url), 2000);
-    } catch {
+    // 2. Direct .vcf Server Navigation (window.location.href = vcardUrl)
+    // Server delivers Content-Type: text/vcard; charset=utf-8 with Content-Disposition: inline.
+    // iOS routes it to MobileAddressBook (the native "Open in Contacts" prompt).
+    // Android triggers the system intent chooser to open with Google Contacts / Phone dialer.
+    if (devicePlatform === "ios" || devicePlatform === "android") {
+      if (e) e.preventDefault();
       window.location.href = vcardUrl;
+      return;
     }
 
-    // Open the Guided Action Modal so user sees the instruction banner immediately
+    // On Desktop: trigger direct server navigation and show helper modal with instant QR code
+    if (e) e.preventDefault();
+    window.location.href = vcardUrl;
     setIsSaveModalOpen(true);
   };
 
@@ -431,9 +426,8 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
             <a
               id="save-contact"
               href={vcardUrl}
-              download={cleanFilename}
               onClick={handleSaveContact}
-              className="flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-primary text-[16px] font-bold text-on-primary shadow-[0_6px_16px_-6px_rgba(12,34,68,0.55)] transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ivory"
+              className="flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-primary text-[16px] font-bold text-on-primary shadow-[0_6px_16px_-6px_rgba(12,34,68,0.55)] transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ivory active:scale-[0.98]"
             >
               <svg className="h-[22px] w-[22px] text-btn-icon" aria-hidden="true">
                 <use href="#i-user-plus" />
