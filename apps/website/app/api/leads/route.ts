@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
       phone: body.phone,
       drugLicenceNumber: sanitizeHtmlText(body.drugLicenceNumber || ""),
       requirementCategory: sanitizeHtmlText(body.requirementCategory || "General Wholesale"),
-      sourceUrl: req.headers.get("referer") || "https://arukamed.com",
+      sourceUrl: req.headers.get("referer") || req.nextUrl.origin,
     });
 
     if (!parsed.success) {

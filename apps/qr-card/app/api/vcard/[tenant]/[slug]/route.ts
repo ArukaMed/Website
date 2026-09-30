@@ -58,7 +58,7 @@ export async function GET(
       )};${escapeVCardValue(addr.pincode)};${escapeVCardValue(addr.country)}`
     ),
     foldLine(
-      `URL:${tenant.customDomain ? `https://${tenant.customDomain}` : `https://${tenant.slug}.arukamed.com`}`
+      `URL:${tenant.customDomain ? `https://${tenant.customDomain}` : `https://${tenant.slug}.connect-card.com`}`
     ),
   ];
 

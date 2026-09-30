@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       phone: body.phone,
       drugLicenceNumber: sanitizeHtmlText(body.licence || ""),
       estimatedMonthlyVolume: sanitizeHtmlText(body.note || ""),
-      sourceUrl: req.headers.get("referer") || "https://c.arukamed.com",
+      sourceUrl: req.headers.get("referer") || req.nextUrl.origin,
     });
 
     if (!parsed.success) {

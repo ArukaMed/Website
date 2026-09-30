@@ -101,7 +101,12 @@ export function AdminDashboard({ initialTenant, initialEmployees }: AdminDashboa
   };
 
   const selectedEmp = employees.find((e) => e.slug === selectedEmployeeSlug) || employees[0];
-  const cardBaseUrl = process.env.NEXT_PUBLIC_CARD_URL || "https://connect.arukamed.com";
+  // Multi-tenant dynamic card base URL (Zero hardcoding)
+  const tenantCardHost = tenant.customDomain ? `connect.${tenant.customDomain}` : `${tenant.slug}.connect-card.com`;
+  const defaultCardBaseUrl = typeof window !== "undefined" && window.location.hostname.includes("localhost")
+    ? `http://localhost:3001`
+    : `https://${tenantCardHost}`;
+  const cardBaseUrl = process.env.NEXT_PUBLIC_CARD_URL || defaultCardBaseUrl;
   const cardUrl = selectedEmp ? `${cardBaseUrl}/c/${selectedEmp.slug}` : "";
   const printSpecs = getCommercialPrintSpec();
 
@@ -617,7 +622,7 @@ export function AdminDashboard({ initialTenant, initialEmployees }: AdminDashboa
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
                     className="w-full p-2 border rounded-lg"
-                    placeholder="user@arukamed.com"
+                    placeholder={`user@${tenant.customDomain || `${tenant.slug}.com`}`}
                   />
                 </div>
               </div>
