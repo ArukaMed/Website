@@ -193,6 +193,15 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
       .join("\r\n") + "\r\n";
   }, [employee, tenant, fullName, websiteUrl, note]);
 
+  const androidIntentUrl = useMemo(() => {
+    const addr = tenant.complianceInfo.warehouseAddress;
+    const fullAddress = `${addr.line1}, ${addr.city}, ${addr.state} ${addr.pincode}`;
+    const enc = (val: string) => encodeURIComponent(val || "");
+    const fallback = vcardUrl.startsWith("http") ? vcardUrl : `https://${primaryDomain}${vcardUrl}`;
+
+    return `intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/contact;S.name=${enc(fullName)};S.phone=${enc(employee.phoneNumber)};S.secondary_phone=${enc(employee.whatsappNumber || "")};S.email=${enc(employee.email)};S.company=${enc(tenant.name)};S.job_title=${enc(employee.designation)};S.postal=${enc(fullAddress)};S.notes=${enc(note)};S.browser_fallback_url=${enc(fallback)};end`;
+  }, [fullName, employee, tenant, note, vcardUrl, primaryDomain]);
+
   // Pre-generate QR Code of vCard for zero-download camera scan import
   useEffect(() => {
     if (!vcfContent) return;
@@ -209,10 +218,21 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
       .catch((err) => console.error("QR Code generation error:", err));
   }, [vcfContent]);
 
-  const handleSaveContact = async (e?: React.MouseEvent) => {
+  const handleSaveContact = async (e?: React.MouseEvent<HTMLAnchorElement>) => {
+    // 1. Android / Samsung Devices: Direct OS Intent opens native Contacts app automatically!
+    const isAndroid =
+      devicePlatform === "android" ||
+      (typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent));
+
+    if (isAndroid) {
+      // Allow browser to follow href={androidIntentUrl} naturally without e.preventDefault()
+      // This directly hands off to Google Contacts / Samsung Contacts app!
+      return;
+    }
+
     if (e) e.preventDefault();
 
-    // 1. Primary: Native OS Share Sheet via Web Share API
+    // 2. iOS / Safari: Native OS Share Sheet via Web Share API
     // Check both standard text/vcard and x-vcard without parameters
     if (
       typeof navigator !== "undefined" &&
@@ -239,7 +259,7 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
       }
     }
 
-    // 2. Direct Fallback: Trigger server-side download with proper headers
+    // 3. Fallback: Trigger server-side download with proper headers
     try {
       const link = document.createElement("a");
       link.href = vcardUrl;
@@ -251,7 +271,7 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
       window.location.href = vcardUrl;
     }
 
-    // 3. Immediately open the Guided Action Modal so user doesn't have to search in Files
+    // Immediately open the Guided Action Modal so user doesn't have to search in Files
     setIsSaveModalOpen(true);
   };
 
@@ -411,9 +431,9 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
         {/* Primary Actions: Save Contact & Fast Reach */}
         <section className="mt-6 px-6" aria-label="Contact actions">
           {tenant.featureFlags.enableVCardSave && (
-            <button
-              type="button"
+            <a
               id="save-contact"
+              href={devicePlatform === "android" ? androidIntentUrl : vcardUrl}
               onClick={handleSaveContact}
               className="flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-primary text-[16px] font-bold text-on-primary shadow-[0_6px_16px_-6px_rgba(12,34,68,0.55)] transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ivory"
             >
@@ -421,7 +441,7 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
                 <use href="#i-user-plus" />
               </svg>
               <span>Save contact</span>
-            </button>
+            </a>
           )}
 
           <div className="mt-3 grid grid-cols-3 gap-2.5">
@@ -894,22 +914,18 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
                 ) : devicePlatform === "android" ? (
                   <div>
                     <div className="flex items-center gap-2 text-[14px] font-bold text-heading">
-                      <span className="text-base">🤖</span> On Android (Chrome / Samsung):
+                      <span className="text-base">🤖</span> On Android &amp; Samsung:
                     </div>
-                    <ol className="mt-2 space-y-2 text-[13px] text-ink leading-snug">
-                      <li className="flex items-start gap-2">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/20 text-[11px] font-bold text-gold">1</span>
-                        <span>Look for the <strong>download popup</strong> on your screen.</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/20 text-[11px] font-bold text-gold">2</span>
-                        <span>Tap <strong>&ldquo;Open&rdquo;</strong>.</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/20 text-[11px] font-bold text-gold">3</span>
-                        <span>Choose <strong>&ldquo;Contacts&rdquo;</strong> to save directly into your address book.</span>
-                      </li>
-                    </ol>
+                    <p className="mt-1 text-[13px] text-muted">
+                      Tap below to open your phone&apos;s Contacts app directly with details filled in:
+                    </p>
+                    <a
+                      href={androidIntentUrl}
+                      className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-primary py-2.5 px-3 text-[13.5px] font-bold text-on-primary hover:bg-primary-hover shadow-sm transition-colors"
+                    >
+                      <svg className="h-4 w-4" aria-hidden="true"><use href="#i-user-plus" /></svg>
+                      <span>Open in Contacts App</span>
+                    </a>
                   </div>
                 ) : (
                   <div>
