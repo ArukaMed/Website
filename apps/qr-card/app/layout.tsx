@@ -15,7 +15,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" data-theme="light">
+    <html lang="en" data-theme="light" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){
+              try {
+                var q = new URLSearchParams(window.location.search).get('theme');
+                var isDark = q === 'dark' || (q !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+              } catch(e) {}
+            })();`,
+          }}
+        />
+      </head>
       <body>
         <PostHogProvider>{children}</PostHogProvider>
       </body>

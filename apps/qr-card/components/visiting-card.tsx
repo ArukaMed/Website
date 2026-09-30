@@ -140,6 +140,71 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
     "Surgical disposables",
   ];
 
+  const handleSaveContact = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+
+    // 1. Construct standard vCard 3.0 string
+    const addr = tenant.complianceInfo.warehouseAddress;
+    const cleanFilename = `${employee.slug || "contact"}.vcf`;
+    const websiteUrl = tenant.customDomain ? `https://${tenant.customDomain}` : `https://${primaryDomain}`;
+    const licenses = tenant.complianceInfo.drugLicences.map((l) => `${l.label}: ${l.number}`).join(" | ");
+    const note = `Territory: ${employee.territoryRegion} | GSTIN: ${tenant.complianceInfo.gstin} | ${licenses}`;
+
+    const escapeVCard = (val: string) =>
+      String(val || "")
+        .replace(/\\/g, "\\\\")
+        .replace(/;/g, "\\;")
+        .replace(/,/g, "\\,")
+        .replace(/\n/g, "\\n");
+
+    const vcfContent = [
+      "BEGIN:VCARD",
+      "VERSION:3.0",
+      `N:${escapeVCard(employee.lastName)};${escapeVCard(employee.firstName)};;;`,
+      `FN:${escapeVCard(fullName)}`,
+      `ORG:${escapeVCard(tenant.name)}${employee.division ? ";" + escapeVCard(employee.division) : ""}`,
+      `TITLE:${escapeVCard(employee.designation)}`,
+      `TEL;TYPE=CELL,VOICE:${employee.phoneNumber}`,
+      employee.whatsappNumber ? `TEL;TYPE=WORK,VOICE,WHATSAPP:${employee.whatsappNumber}` : "",
+      `EMAIL;TYPE=WORK,INTERNET:${employee.email}`,
+      `ADR;TYPE=WORK:;;${escapeVCard(addr.line1)};${escapeVCard(addr.city)};${escapeVCard(addr.state)};${escapeVCard(addr.pincode)};${escapeVCard(addr.country)}`,
+      `URL:${websiteUrl}`,
+      employee.linkedinUrl ? `X-SOCIALPROFILE;TYPE=linkedin:${employee.linkedinUrl}` : "",
+      `NOTE:${escapeVCard(note)}`,
+      `REV:${new Date().toISOString()}`,
+      "END:VCARD",
+    ]
+      .filter(Boolean)
+      .join("\r\n") + "\r\n";
+
+    // 2. Primary Mechanism: Web Share API with File Sharing
+    if (
+      typeof navigator !== "undefined" &&
+      typeof navigator.share === "function" &&
+      typeof navigator.canShare === "function"
+    ) {
+      try {
+        const file = new File([vcfContent], cleanFilename, { type: "text/vcard;charset=utf-8" });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: fullName,
+          });
+          return;
+        }
+      } catch (err: any) {
+        if (err && err.name === "AbortError") {
+          // User intentionally closed the native share tray
+          return;
+        }
+        // Fall back to server route if share throws an unexpected error
+      }
+    }
+
+    // 3. Fallback Mechanism: Optimized Direct Server Endpoint with headers
+    window.location.href = vcardUrl;
+  };
+
   return (
     <>
       {/* Universal SVG Line Icon Sprite */}
@@ -292,7 +357,8 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
               id="save-contact"
               href={vcardUrl}
               download={`${employee.slug}.vcf`}
-              className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-primary text-[16px] font-bold text-on-primary shadow-[0_6px_16px_-6px_rgba(12,34,68,0.55)] transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ivory"
+              onClick={handleSaveContact}
+              className="flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-primary text-[16px] font-bold text-on-primary shadow-[0_6px_16px_-6px_rgba(12,34,68,0.55)] transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ivory"
             >
               <svg className="h-[22px] w-[22px] text-btn-icon" aria-hidden="true">
                 <use href="#i-user-plus" />
