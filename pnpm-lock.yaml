@@ -67,58 +67,6 @@ importers:
         specifier: ^5.8.2
         version: 5.9.3
 
-  apps/marketing:
-    dependencies:
-      '@aegis/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
-      '@aegis/database':
-        specifier: workspace:*
-        version: link:../../packages/database
-      '@aegis/types':
-        specifier: workspace:*
-        version: link:../../packages/types
-      '@aegis/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
-      '@sentry/nextjs':
-        specifier: ^11.1.0
-        version: 11.1.0(next@15.5.26(@opentelemetry/api@1.9.1)(@types/node@22.20.4)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)
-      next:
-        specifier: ^15.2.1
-        version: 15.5.26(@opentelemetry/api@1.9.1)(@types/node@22.20.4)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      posthog-js:
-        specifier: ^1.435.0
-        version: 1.435.0(@types/react@19.3.0)(react@19.3.0)
-      react:
-        specifier: ^19.0.0
-        version: 19.3.0
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.3.0(react@19.3.0)
-    devDependencies:
-      '@types/node':
-        specifier: ^22.13.10
-        version: 22.20.4
-      '@types/react':
-        specifier: ^19.0.10
-        version: 19.3.0
-      '@types/react-dom':
-        specifier: ^19.0.4
-        version: 19.3.0(@types/react@19.3.0)
-      autoprefixer:
-        specifier: ^10.4.20
-        version: 10.6.1(postcss@8.5.28)
-      postcss:
-        specifier: ^8.5.3
-        version: 8.5.28
-      tailwindcss:
-        specifier: ^3.4.17
-        version: 3.4.19
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.3
-
   apps/ops-portal:
     dependencies:
       '@aegis/auth':
@@ -179,6 +127,58 @@ importers:
       '@aegis/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      next:
+        specifier: ^15.2.1
+        version: 15.5.26(@opentelemetry/api@1.9.1)(@types/node@22.20.4)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      posthog-js:
+        specifier: ^1.435.0
+        version: 1.435.0(@types/react@19.3.0)(react@19.3.0)
+      react:
+        specifier: ^19.0.0
+        version: 19.3.0
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.3.0(react@19.3.0)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.10
+        version: 22.20.4
+      '@types/react':
+        specifier: ^19.0.10
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.0.4
+        version: 19.3.0(@types/react@19.3.0)
+      autoprefixer:
+        specifier: ^10.4.20
+        version: 10.6.1(postcss@8.5.28)
+      postcss:
+        specifier: ^8.5.3
+        version: 8.5.28
+      tailwindcss:
+        specifier: ^3.4.17
+        version: 3.4.19
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+
+  apps/website:
+    dependencies:
+      '@aegis/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@aegis/database':
+        specifier: workspace:*
+        version: link:../../packages/database
+      '@aegis/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      '@aegis/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      '@sentry/nextjs':
+        specifier: ^11.1.0
+        version: 11.1.0(next@15.5.26(@opentelemetry/api@1.9.1)(@types/node@22.20.4)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)
       next:
         specifier: ^15.2.1
         version: 15.5.26(@opentelemetry/api@1.9.1)(@types/node@22.20.4)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)

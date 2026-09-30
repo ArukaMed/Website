@@ -101,7 +101,8 @@ export function AdminDashboard({ initialTenant, initialEmployees }: AdminDashboa
   };
 
   const selectedEmp = employees.find((e) => e.slug === selectedEmployeeSlug) || employees[0];
-  const cardUrl = selectedEmp ? `https://c.arukamed.com/c/${selectedEmp.slug}` : "";
+  const cardBaseUrl = process.env.NEXT_PUBLIC_CARD_URL || "https://connect.arukamed.com";
+  const cardUrl = selectedEmp ? `${cardBaseUrl}/c/${selectedEmp.slug}` : "";
   const printSpecs = getCommercialPrintSpec();
 
   return (
@@ -381,7 +382,7 @@ export function AdminDashboard({ initialTenant, initialEmployees }: AdminDashboa
                 <div className="w-20 h-4 bg-slate-800 rounded-b-xl"></div>
               </div>
               <iframe
-                src={`http://localhost:3001/c/${selectedEmployeeSlug}`}
+                src={`${cardBaseUrl}/c/${selectedEmployeeSlug}`}
                 title="Mobile Preview"
                 className="w-full h-[calc(100%-24px)] border-0"
               />

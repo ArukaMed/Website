@@ -5,7 +5,7 @@ const supabaseAnonKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
   process.env.NEXT_PUBLIC_SUPABASE_KEY ||
-  "";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzd3h3anNudGptaWd5anF6a3VuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3MDU1NDMsImV4cCI6MjEwNjI4MTU0M30.YsYtyNlZHL0S-g7NVYdNMhQN7tcX50U-RT3FkH86DvY";
 
 /**
  * Shared Supabase Client for client-side and edge auth/session handling
