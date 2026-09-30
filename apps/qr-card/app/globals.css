@@ -34,22 +34,22 @@
   --navy: #5C8AD0;
   --navy-mid: #17396B;
   --navy-deep: #06142B;
-  --navy-tint: rgba(255, 255, 255, 0.09);
-  --gold: #D9A950;
-  --gold-deep: #B57F1E;
+  --navy-tint: #243B60;
+  --gold: #DAA950;
+  --gold-deep: #8A5A1F;
   --gold-tint: #2A2A2A;
   --ivory: #0A1D3B;
-  --surface: #173B6E;
+  --surface: #112A52;
   --ink: #EEF3FA;
-  --heading: #F3F6FB;
+  --heading: #F4F6FC;
   --muted: #A5B3CA;
-  --line: rgba(255, 255, 255, 0.16);
+  --line: #2D4264;
   --page: #050F20;
-  --primary: #D9A950;
-  --primary-hover: #B57F1E;
+  --primary: #DAA950;
+  --primary-hover: #8A5A1F;
   --on-primary: #0A1D3B;
   --btn-icon: #0A1D3B;
-  --wa: #39D27F;
+  --wa: #38D280;
   --err: #FF9C94;
   --ok: #7FE0A8;
   --hdr-a: #123063;
@@ -93,7 +93,7 @@ dialog::backdrop {
 
 @layer components {
   .row {
-    @apply flex min-h-[64px] w-full items-center gap-3.5 px-4 py-3 text-left transition-colors hover:bg-ivory active:bg-navy-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary;
+    @apply flex min-h-[64px] w-full items-center gap-3.5 px-4 py-3 text-left transition-colors hover:bg-navy-tint active:bg-navy-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary;
   }
   .tile {
     @apply grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-navy-tint text-heading;

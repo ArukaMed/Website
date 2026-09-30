@@ -276,8 +276,8 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
             {fullName}
           </h1>
           <p className="mt-1.5 text-[15px] leading-snug text-ink">{employee.designation}</p>
-          <p className="mt-1.5 flex items-center gap-1.5 text-[13.5px] font-semibold text-gold-deep">
-            <svg className="h-4 w-4 shrink-0 text-gold-deep" aria-hidden="true">
+          <p className="mt-1.5 flex items-center gap-1.5 text-[13.5px] font-semibold text-gold">
+            <svg className="h-4 w-4 shrink-0 text-gold" aria-hidden="true">
               <use href="#i-pin" />
             </svg>
             <span>{employee.territoryRegion}</span>
@@ -333,21 +333,21 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
         <section className="mt-6 px-6" aria-label="Compliance and supply standards">
           <ul id="badges" className="grid grid-cols-3 divide-x divide-line overflow-hidden rounded-2xl border border-line bg-surface">
             <li className="flex flex-col items-center px-2 py-4 text-center">
-              <svg className="h-6 w-6 text-gold-deep" aria-hidden="true">
+              <svg className="h-6 w-6 text-gold" aria-hidden="true">
                 <use href="#i-shield" />
               </svg>
               <span className="mt-2 text-[12.5px] font-bold leading-tight text-heading">Form 20B and 21B</span>
               <span className="mt-1 text-[11.5px] leading-tight text-muted">Drug licence compliant</span>
             </li>
             <li className="flex flex-col items-center px-2 py-4 text-center">
-              <svg className="h-6 w-6 text-gold-deep" aria-hidden="true">
+              <svg className="h-6 w-6 text-gold" aria-hidden="true">
                 <use href="#i-snow" />
               </svg>
               <span className="mt-2 text-[12.5px] font-bold leading-tight text-heading">2°C to 8°C</span>
               <span className="mt-1 text-[11.5px] leading-tight text-muted">Cold chain storage</span>
             </li>
             <li className="flex flex-col items-center px-2 py-4 text-center">
-              <svg className="h-6 w-6 text-gold-deep" aria-hidden="true">
+              <svg className="h-6 w-6 text-gold" aria-hidden="true">
                 <use href="#i-truck" />
               </svg>
               <span className="mt-2 text-[12.5px] font-bold leading-tight text-heading">Same day</span>
