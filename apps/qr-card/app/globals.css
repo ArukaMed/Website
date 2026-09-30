@@ -114,3 +114,38 @@ dialog::backdrop {
     @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 text-[13.5px] font-semibold text-heading transition-colors hover:bg-navy-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary;
   }
 }
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Touch device optimization: immediately clears sticky button highlight when finger lifts */
+@media (hover: none) and (pointer: coarse) {
+  .qbtn, .row, .ghost, #save-contact, a, button {
+    -webkit-tap-highlight-color: transparent !important;
+  }
+  
+  /* Reset sticky hover styles on mobile touch */
+  .qbtn:hover,
+  .row:hover,
+  .ghost:hover {
+    background-color: var(--surface) !important;
+  }
+  #save-contact:hover {
+    background-color: var(--primary) !important;
+  }
+
+  /* Snappy active feedback only while finger is down */
+  .qbtn:active,
+  .row:active,
+  .ghost:active {
+    background-color: var(--navy-tint) !important;
+    opacity: 0.85;
+    transition: none !important;
+  }
+  #save-contact:active {
+    background-color: var(--primary-hover) !important;
+    opacity: 0.85;
+    transition: none !important;
+  }
+}

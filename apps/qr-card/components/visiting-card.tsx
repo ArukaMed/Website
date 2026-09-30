@@ -61,6 +61,21 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
     }
   }, []);
 
+  // Auto-clear active/focused highlight on touch screens as soon as finger is lifted
+  useEffect(() => {
+    const handleTouchEnd = () => {
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+    };
+    window.addEventListener("touchend", handleTouchEnd, { passive: true });
+    window.addEventListener("touchcancel", handleTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener("touchend", handleTouchEnd);
+      window.removeEventListener("touchcancel", handleTouchEnd);
+    };
+  }, []);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 2500);
