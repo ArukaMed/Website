@@ -7,9 +7,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@aegis/types": "workspace:*"
+    "@aegis/types": "workspace:*",
+    "@supabase/supabase-js": "^2.117.2"
   },
   "devDependencies": {
+    "@types/node": "^22.20.4",
     "typescript": "^5.8.2"
   }
 }
