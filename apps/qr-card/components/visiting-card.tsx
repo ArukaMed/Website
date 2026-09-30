@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import QRCode from "qrcode";
 import type { Tenant, Employee } from "@aegis/types";
 
 interface VisitingCardProps {
@@ -16,6 +17,9 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
   const [isCreditOpen, setIsCreditOpen] = useState(false);
   const [creditStatus, setCreditStatus] = useState<{ message: string; isError?: boolean } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [vcardQrDataUrl, setVcardQrDataUrl] = useState<string | null>(null);
+  const [devicePlatform, setDevicePlatform] = useState<"ios" | "android" | "other">("other");
 
   // Automatically detect and synchronize with system color scheme (default to light)
   useEffect(() => {
@@ -40,6 +44,20 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
     } catch {
       setThemeMode("light");
       document.documentElement.setAttribute("data-theme", "light");
+    }
+  }, []);
+
+  // Detect mobile OS platform for tailored contact saving guide
+  useEffect(() => {
+    if (typeof navigator !== "undefined") {
+      const ua = navigator.userAgent || "";
+      if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) {
+        setDevicePlatform("ios");
+      } else if (/Android/.test(ua)) {
+        setDevicePlatform("android");
+      } else {
+        setDevicePlatform("other");
+      }
     }
   }, []);
 
@@ -140,24 +158,21 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
     "Surgical disposables",
   ];
 
-  const handleSaveContact = async (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
+  const cleanFilename = `${employee.slug || "contact"}.vcf`;
+  const websiteUrl = tenant.customDomain ? `https://${tenant.customDomain}` : `https://${primaryDomain}`;
+  const licenses = tenant.complianceInfo.drugLicences.map((l) => `${l.label}: ${l.number}`).join(" | ");
+  const note = `Territory: ${employee.territoryRegion} | GSTIN: ${tenant.complianceInfo.gstin} | ${licenses}`;
 
-    // 1. Construct standard vCard 3.0 string
+  const escapeVCard = (val: string) =>
+    String(val || "")
+      .replace(/\\/g, "\\\\")
+      .replace(/;/g, "\\;")
+      .replace(/,/g, "\\,")
+      .replace(/\n/g, "\\n");
+
+  const vcfContent = useMemo(() => {
     const addr = tenant.complianceInfo.warehouseAddress;
-    const cleanFilename = `${employee.slug || "contact"}.vcf`;
-    const websiteUrl = tenant.customDomain ? `https://${tenant.customDomain}` : `https://${primaryDomain}`;
-    const licenses = tenant.complianceInfo.drugLicences.map((l) => `${l.label}: ${l.number}`).join(" | ");
-    const note = `Territory: ${employee.territoryRegion} | GSTIN: ${tenant.complianceInfo.gstin} | ${licenses}`;
-
-    const escapeVCard = (val: string) =>
-      String(val || "")
-        .replace(/\\/g, "\\\\")
-        .replace(/;/g, "\\;")
-        .replace(/,/g, "\\,")
-        .replace(/\n/g, "\\n");
-
-    const vcfContent = [
+    return [
       "BEGIN:VCARD",
       "VERSION:3.0",
       `N:${escapeVCard(employee.lastName)};${escapeVCard(employee.firstName)};;;`,
@@ -176,33 +191,68 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
     ]
       .filter(Boolean)
       .join("\r\n") + "\r\n";
+  }, [employee, tenant, fullName, websiteUrl, note]);
 
-    // 2. Primary Mechanism: Web Share API with File Sharing
+  // Pre-generate QR Code of vCard for zero-download camera scan import
+  useEffect(() => {
+    if (!vcfContent) return;
+    QRCode.toDataURL(vcfContent, {
+      margin: 2,
+      width: 260,
+      errorCorrectionLevel: "M",
+      color: {
+        dark: "#0A1D3B",
+        light: "#FFFFFF",
+      },
+    })
+      .then(setVcardQrDataUrl)
+      .catch((err) => console.error("QR Code generation error:", err));
+  }, [vcfContent]);
+
+  const handleSaveContact = async (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+
+    // 1. Primary: Native OS Share Sheet via Web Share API
+    // Check both standard text/vcard and x-vcard without parameters
     if (
       typeof navigator !== "undefined" &&
       typeof navigator.share === "function" &&
       typeof navigator.canShare === "function"
     ) {
-      try {
-        const file = new File([vcfContent], cleanFilename, { type: "text/vcard;charset=utf-8" });
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: fullName,
-          });
-          return;
+      for (const mime of ["text/vcard", "text/x-vcard"]) {
+        try {
+          const file = new File([vcfContent], cleanFilename, { type: mime });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: fullName,
+              text: `Save contact: ${fullName}`,
+            });
+            return; // Native system sheet opened directly!
+          }
+        } catch (err: any) {
+          if (err && err.name === "AbortError") {
+            // User intentionally closed the native share tray
+            return;
+          }
         }
-      } catch (err: any) {
-        if (err && err.name === "AbortError") {
-          // User intentionally closed the native share tray
-          return;
-        }
-        // Fall back to server route if share throws an unexpected error
       }
     }
 
-    // 3. Fallback Mechanism: Optimized Direct Server Endpoint with headers
-    window.location.href = vcardUrl;
+    // 2. Direct Fallback: Trigger server-side download with proper headers
+    try {
+      const link = document.createElement("a");
+      link.href = vcardUrl;
+      link.setAttribute("download", cleanFilename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch {
+      window.location.href = vcardUrl;
+    }
+
+    // 3. Immediately open the Guided Action Modal so user doesn't have to search in Files
+    setIsSaveModalOpen(true);
   };
 
   return (
@@ -288,8 +338,16 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
             <circle cx="12" cy="12" r="4" />
             <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
           </symbol>
-          <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z" />
+          <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <path d="m7 10 5 5 5-5" />
+            <path d="M12 15V3" />
+          </symbol>
+          <symbol id="i-qrcode" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <path d="M14 14h3v3h-3zM17 17h4v4h-4zM14 20h3v1h-3zM20 14h1v3h-1z" />
           </symbol>
         </defs>
       </svg>
@@ -353,10 +411,9 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
         {/* Primary Actions: Save Contact & Fast Reach */}
         <section className="mt-6 px-6" aria-label="Contact actions">
           {tenant.featureFlags.enableVCardSave && (
-            <a
+            <button
+              type="button"
               id="save-contact"
-              href={vcardUrl}
-              download={`${employee.slug}.vcf`}
               onClick={handleSaveContact}
               className="flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-primary text-[16px] font-bold text-on-primary shadow-[0_6px_16px_-6px_rgba(12,34,68,0.55)] transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ivory"
             >
@@ -364,7 +421,7 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
                 <use href="#i-user-plus" />
               </svg>
               <span>Save contact</span>
-            </a>
+            </button>
           )}
 
           <div className="mt-3 grid grid-cols-3 gap-2.5">
@@ -780,6 +837,150 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
                   <span>{isSubmitting ? "Sending request..." : "Send request"}</span>
                 </button>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Save to Contacts Helper Modal */}
+        {isSaveModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-sm p-0 sm:p-4">
+            <div className="w-full max-w-[430px] rounded-t-3xl sm:rounded-3xl bg-surface border border-line p-6 shadow-2xl animate-in slide-in-from-bottom duration-200">
+              <div className="flex items-start justify-between gap-3 pb-3 border-b border-line">
+                <div className="flex items-center gap-3">
+                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gold/15 text-gold">
+                    <svg className="h-6 w-6" aria-hidden="true">
+                      <use href="#i-user-plus" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-[18px] font-bold text-heading leading-tight">Save to Contacts</h2>
+                    <p className="mt-0.5 text-[12.5px] text-muted">Direct contact card for {fullName}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsSaveModalOpen(false)}
+                  className="-mr-2 -mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-full text-ink hover:bg-navy-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  aria-label="Close"
+                >
+                  <svg className="h-5 w-5" aria-hidden="true">
+                    <use href="#i-x" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Step-by-step OS specific visual guidance */}
+              <div className="mt-4 rounded-2xl border border-line bg-navy-tint/40 p-4">
+                {devicePlatform === "ios" ? (
+                  <div>
+                    <div className="flex items-center gap-2 text-[14px] font-bold text-heading">
+                      <span className="text-base">📱</span> On iPhone / Safari:
+                    </div>
+                    <ol className="mt-2 space-y-2 text-[13px] text-ink leading-snug">
+                      <li className="flex items-start gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/20 text-[11px] font-bold text-gold">1</span>
+                        <span>Look at the <strong>address bar</strong> (top or bottom) and tap the <strong>Download icon (↓)</strong>.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/20 text-[11px] font-bold text-gold">2</span>
+                        <span>Tap <strong>{cleanFilename}</strong> to preview contact.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/20 text-[11px] font-bold text-gold">3</span>
+                        <span>Tap <strong>&ldquo;Add to Contacts&rdquo;</strong> in the top right corner.</span>
+                      </li>
+                    </ol>
+                  </div>
+                ) : devicePlatform === "android" ? (
+                  <div>
+                    <div className="flex items-center gap-2 text-[14px] font-bold text-heading">
+                      <span className="text-base">🤖</span> On Android (Chrome / Samsung):
+                    </div>
+                    <ol className="mt-2 space-y-2 text-[13px] text-ink leading-snug">
+                      <li className="flex items-start gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/20 text-[11px] font-bold text-gold">1</span>
+                        <span>Look for the <strong>download popup</strong> on your screen.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/20 text-[11px] font-bold text-gold">2</span>
+                        <span>Tap <strong>&ldquo;Open&rdquo;</strong>.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/20 text-[11px] font-bold text-gold">3</span>
+                        <span>Choose <strong>&ldquo;Contacts&rdquo;</strong> to save directly into your address book.</span>
+                      </li>
+                    </ol>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-center gap-2 text-[14px] font-bold text-heading">
+                      <span className="text-base">💻</span> Direct Computer / Phone Sync:
+                    </div>
+                    <p className="mt-1 text-[13px] text-muted leading-relaxed">
+                      Your download for <strong>{cleanFilename}</strong> has started. Click the downloaded file to import into Apple Contacts, Outlook, or Google Contacts.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Instant Zero-Download QR Code Alternative */}
+              {vcardQrDataUrl && (
+                <div className="mt-4 rounded-2xl border border-line bg-surface p-3.5 text-center">
+                  <div className="flex items-center justify-center gap-1.5 text-[12px] font-bold uppercase tracking-wider text-gold">
+                    <svg className="h-4 w-4" aria-hidden="true"><use href="#i-qrcode" /></svg>
+                    <span>Instant Camera Scan (0 Downloads)</span>
+                  </div>
+                  <p className="mt-0.5 text-[12px] text-muted">
+                    Point any smartphone camera to add contact with 1 tap:
+                  </p>
+                  <div className="mt-2.5 inline-block rounded-xl bg-white p-2 shadow-sm ring-1 ring-line">
+                    <img
+                      src={vcardQrDataUrl}
+                      alt={`vCard QR for ${fullName}`}
+                      className="h-36 w-36 object-contain mx-auto"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Instant Direct CTAs */}
+              <div className="mt-4 grid grid-cols-2 gap-2.5">
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-wa/15 py-3 text-[13.5px] font-bold text-wa hover:bg-wa/25 transition-colors"
+                >
+                  <svg className="h-4 w-4 shrink-0" aria-hidden="true"><use href="#i-whatsapp" /></svg>
+                  <span>WhatsApp</span>
+                </a>
+                <a
+                  href={`tel:${employee.phoneNumber}`}
+                  className="flex items-center justify-center gap-2 rounded-xl border border-line bg-surface py-3 text-[13.5px] font-bold text-heading hover:bg-navy-tint transition-colors"
+                >
+                  <svg className="h-4 w-4 shrink-0" aria-hidden="true"><use href="#i-phone" /></svg>
+                  <span>Direct Call</span>
+                </a>
+              </div>
+
+              {/* Bottom footer: Retry download link & Done button */}
+              <div className="mt-4 flex items-center justify-between pt-3 border-t border-line text-[12.5px]">
+                <button
+                  type="button"
+                  onClick={() => handleSaveContact()}
+                  className="text-muted hover:text-heading underline underline-offset-4 flex items-center gap-1.5"
+                >
+                  <svg className="h-3.5 w-3.5" aria-hidden="true"><use href="#i-download" /></svg>
+                  <span>Re-download file</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsSaveModalOpen(false)}
+                  className="rounded-lg bg-primary px-4 py-1.5 font-bold text-on-primary hover:bg-primary-hover transition-colors"
+                >
+                  Done
+                </button>
+              </div>
             </div>
           </div>
         )}
