@@ -172,53 +172,69 @@ export function AdminDashboard({ initialTenant, initialEmployees, initialLeads =
       <div className="bg-white border-b border-slate-200 px-6 flex gap-6 text-sm font-semibold">
         <button
           onClick={() => setActiveTab("employees")}
-          className={`py-3.5 border-b-2 transition-colors ${
+          className={`py-3.5 border-b-2 transition-colors flex items-center gap-2 ${
             activeTab === "employees"
               ? "border-navy text-navy font-bold"
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          👥 Employees ({employees.length})
+          <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+          <span>Employees ({employees.length})</span>
         </button>
         <button
           onClick={() => setActiveTab("qr")}
-          className={`py-3.5 border-b-2 transition-colors ${
+          className={`py-3.5 border-b-2 transition-colors flex items-center gap-2 ${
             activeTab === "qr"
               ? "border-navy text-navy font-bold"
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          🔲 QR Code & Print Studio
+          <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+          </svg>
+          <span>QR Code & Print Studio</span>
         </button>
         <button
           onClick={() => setActiveTab("preview")}
-          className={`py-3.5 border-b-2 transition-colors ${
+          className={`py-3.5 border-b-2 transition-colors flex items-center gap-2 ${
             activeTab === "preview"
               ? "border-navy text-navy font-bold"
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          📱 Live Card Preview
+          <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+            <rect x="5" y="2" width="14" height="20" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01" />
+          </svg>
+          <span>Live Card Preview</span>
         </button>
         <button
           onClick={() => setActiveTab("theme")}
-          className={`py-3.5 border-b-2 transition-colors ${
+          className={`py-3.5 border-b-2 transition-colors flex items-center gap-2 ${
             activeTab === "theme"
               ? "border-navy text-navy font-bold"
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          🎨 White-Label Brand & Theming
+          <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4 4 4 0 014-4c.48 0 .936.084 1.36.24L17.5 4.5a2.121 2.121 0 113 3L11.76 16.64c.156.424.24.88.24 1.36a4 4 0 01-4 4z" />
+          </svg>
+          <span>White-Label Brand & Theming</span>
         </button>
         <button
           onClick={() => setActiveTab("leads")}
-          className={`py-3.5 border-b-2 transition-colors ${
+          className={`py-3.5 border-b-2 transition-colors flex items-center gap-2 ${
             activeTab === "leads"
               ? "border-navy text-navy font-bold"
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          📊 Leads & Inquiries
+          <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          <span>Leads & Inquiries</span>
         </button>
       </div>
 
@@ -268,7 +284,13 @@ export function AdminDashboard({ initialTenant, initialEmployees, initialLeads =
                       </td>
                       <td className="py-3 px-4">
                         <div className="text-slate-800">{emp.designation}</div>
-                        <div className="text-xs text-gold font-semibold">📍 {emp.territoryRegion}</div>
+                        <div className="text-xs text-gold font-semibold flex items-center gap-1 mt-0.5">
+                          <svg className="h-3 w-3 text-gold shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <span>{emp.territoryRegion}</span>
+                        </div>
                       </td>
                       <td className="py-3 px-4 text-xs font-mono">
                         <div>{emp.phoneNumber}</div>
@@ -336,7 +358,11 @@ export function AdminDashboard({ initialTenant, initialEmployees, initialLeads =
                 {/* SVG Vector QR placeholder */}
                 <div className="mx-auto w-48 h-48 bg-white p-3 rounded-xl border border-slate-300 shadow-inner flex flex-col items-center justify-center">
                   <div className="text-xs font-mono text-slate-400 mb-1">Error Correction: H (30%)</div>
-                  <div className="text-4xl my-2">🔲</div>
+                  <div className="my-2 p-3 rounded-lg bg-slate-100 text-slate-800">
+                    <svg className="h-10 w-10 text-navy" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                    </svg>
+                  </div>
                   <div className="text-[10px] font-mono break-all text-slate-500 px-2">{cardUrl}</div>
                 </div>
 
@@ -391,8 +417,13 @@ export function AdminDashboard({ initialTenant, initialEmployees, initialLeads =
                 </div>
               </dl>
 
-              <div className="mt-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs">
-                ⚠️ <strong>Printer Delivery Ready:</strong> Direct vendor upload packages include vector cutting paths, safe title text margins (0.125"), and embedded Pantone color bridges.
+              <div className="mt-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2.5">
+                <svg className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>
+                  <strong>Printer Delivery Ready:</strong> Direct vendor upload packages include vector cutting paths, safe title text margins (0.125"), and embedded Pantone color bridges.
+                </span>
               </div>
             </div>
           </div>
@@ -524,7 +555,9 @@ export function AdminDashboard({ initialTenant, initialEmployees, initialLeads =
             <div className="mt-8 pt-6 border-t border-slate-200">
               <h4 className="text-sm font-bold text-slate-900 mb-3">WCAG AA Accessibility Check</h4>
               <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800 flex items-center gap-2">
-                <span>✓</span>
+                <svg className="h-4 w-4 text-green-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
                 <span>
                   Primary Navy <strong>({tenant.themeConfig.primary})</strong> on Ivory background <strong>({tenant.themeConfig.ivoryBg})</strong> passes contrast ratio (<strong>9.4:1</strong>, exceeds 4.5:1 WCAG AA limit).
                 </span>
@@ -549,7 +582,9 @@ export function AdminDashboard({ initialTenant, initialEmployees, initialLeads =
                 className="bg-navy-deep hover:bg-slate-800 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 transition-colors"
               >
                 <span>Export CSV</span>
-                <span>📥</span>
+                <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
               </a>
             </div>
 
@@ -620,8 +655,10 @@ export function AdminDashboard({ initialTenant, initialEmployees, initialLeads =
           <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold text-slate-900">Onboard Field Sales Representative</h3>
-              <button onClick={() => setIsAddOpen(false)} className="text-slate-400 hover:text-slate-700">
-                ✕
+              <button onClick={() => setIsAddOpen(false)} className="text-slate-400 hover:text-slate-700" aria-label="Close">
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 

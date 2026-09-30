@@ -7,6 +7,53 @@ interface B2BSiteProps {
   tenant: Tenant;
 }
 
+function SegmentIcon({ name, className = "h-6 w-6" }: { name: string; className?: string }) {
+  switch (name) {
+    case "syringe":
+      return (
+        <svg className={className} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 5l-2-2m-3 3l2 2m-2-2l-7 7m0 0l-2-2 2-2 2 2m0 0l-4 4H3v-2l4-4m5-5l2 2m3-3l2 2" />
+        </svg>
+      );
+    case "heart":
+      return (
+        <svg className={className} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+        </svg>
+      );
+    case "dna":
+      return (
+        <svg className={className} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M14 4c0 4-4 6-4 10s4 6 4 10M10 4c0 4 4 6 4 10s-4 6-4 10M6 8h12M7 16h10M8 12h8" />
+        </svg>
+      );
+    case "flask":
+      return (
+        <svg className={className} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 7h-6L8 4z" />
+        </svg>
+      );
+    case "leaf":
+      return (
+        <svg className={className} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 2a10 10 0 0110 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0112 2zm0 0v20m0-10c3 0 5-2 5-5m-5 5c-3 0-5 2-5 5" />
+        </svg>
+      );
+    case "bandage":
+      return (
+        <svg className={className} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M14 10l-4 4m2-7l6 6a2.828 2.828 0 11-4 4l-6-6a2.828 2.828 0 114-4z" />
+        </svg>
+      );
+    default:
+      return (
+        <svg className={className} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" />
+        </svg>
+      );
+  }
+}
+
 export function B2BSite({ tenant }: B2BSiteProps) {
   const [selectedSegment, setSelectedSegment] = useState<number | null>(null);
   const [leadSuccess, setLeadSuccess] = useState(false);
@@ -23,42 +70,42 @@ export function B2BSite({ tenant }: B2BSiteProps) {
   const segments = [
     {
       title: "Critical Care & Anesthesia",
-      icon: "💉",
+      icon: "syringe",
       coldChain: false,
       description: "Emergency and intensive care injectables, anaesthetics and IV therapy for operating rooms and ICUs.",
       formulations: ["Injectable anaesthetics", "Muscle relaxants", "Vasopressors & inotropes", "IV fluids & electrolytes", "Emergency resuscitation drugs"],
     },
     {
       title: "Cardiology & Anti-Diabetics",
-      icon: "❤️",
+      icon: "heart",
       coldChain: true,
       description: "Long-term therapy for cardiovascular health and diabetes management, including insulin cold chain storage.",
       formulations: ["Antihypertensives (ARBs, Beta blockers)", "Statins & lipid-lowering agents", "Antiplatelets & anticoagulants", "Oral anti-diabetic formulations", "Biologic insulins (2-8°C)"],
     },
     {
       title: "Oncology & Specialty Biologics",
-      icon: "🧬",
+      icon: "dna",
       coldChain: true,
       description: "Specialty injectables, targeted biologics, and monoclonal antibodies managed under continuous cold-chain audit.",
       formulations: ["Monoclonal antibodies", "Chemotherapy injectables", "Oncology supportive care", "Biologic vaccines", "Hormonal therapy agents"],
     },
     {
       title: "Antibiotics & Anti-Infectives",
-      icon: "🧪",
+      icon: "flask",
       coldChain: false,
       description: "Broad-spectrum and targeted anti-infectives in oral solid and sterile injectable dosage forms.",
       formulations: ["Cephalosporins (oral & IV)", "Penicillin combinations", "Macrolides & fluoroquinolones", "Systemic antifungals", "Antivirals and antimalarials"],
     },
     {
       title: "Derma & Nutraceuticals",
-      icon: "🌿",
+      icon: "leaf",
       coldChain: false,
       description: "Dermatological therapeutics and clinical nutritional formulations for pharmacy shelves.",
       formulations: ["Topical corticosteroids & emollients", "Antifungal creams & lotions", "Therapeutic vitamins & minerals", "Clinical protein supplements", "Dermo-cosmeceuticals"],
     },
     {
       title: "Hospital Surgicals & Disposables",
-      icon: "🩹",
+      icon: "bandage",
       coldChain: false,
       description: "Medical consumables and sterile surgical supplies for wards, emergency triage, and operating theatres.",
       formulations: ["Sterile syringes & infusion sets", "Sutures & sterile wound dressings", "Nitrile gloves & surgical masks", "Catheters & suction drains", "Diagnostic reagent strips"],
@@ -127,15 +174,15 @@ export function B2BSite({ tenant }: B2BSiteProps) {
       <div className="bg-[var(--deep)] text-[#DCE6F5] text-xs py-2.5 px-4 overflow-hidden border-b border-white/10">
         <div className="wrap flex items-center justify-between gap-4 text-center sm:text-left flex-wrap">
           <div className="flex items-center gap-2">
-            <span className="text-[#E3B15F]">✓</span>
+            <svg className="h-4 w-4 text-[#E3B15F] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
             <span>Licensed Wholesale Drug Distributor (Form 20B & 21B)</span>
           </div>
           <div className="hidden md:flex items-center gap-2">
-            <span className="text-[#E3B15F]">✓</span>
+            <svg className="h-4 w-4 text-[#E3B15F] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
             <span>GST Compliant Billing & Real-time Batch Expiry Tracking</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[#E3B15F]">✓</span>
+            <svg className="h-4 w-4 text-[#E3B15F] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
             <span>2°C - 8°C Monitored Cold Chain Storage</span>
           </div>
         </div>
@@ -189,7 +236,9 @@ export function B2BSite({ tenant }: B2BSiteProps) {
             className="lg:hidden p-2 rounded-lg border border-[var(--line)]"
             aria-label="Toggle navigation"
           >
-            ☰
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
           </button>
         </div>
 
@@ -232,7 +281,9 @@ export function B2BSite({ tenant }: B2BSiteProps) {
                 rel="noopener noreferrer"
                 className="btn btn-gold"
               >
-                <span>📥</span>
+                <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
                 <span>Download Wholesale Catalog (PDF)</span>
               </a>
               <a href="#inquiry" className="btn btn-line">
@@ -340,7 +391,9 @@ export function B2BSite({ tenant }: B2BSiteProps) {
                 className="bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-6 flex flex-col justify-between hover:border-[var(--accent)] transition-all shadow-sm"
               >
                 <div>
-                  <div className="text-3xl mb-4">{seg.icon}</div>
+                  <div className="w-12 h-12 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center mb-4">
+                    <SegmentIcon name={seg.icon} />
+                  </div>
                   <h3 className="text-xl font-bold font-display text-[var(--heading)]">
                     {seg.title}
                   </h3>
@@ -359,7 +412,10 @@ export function B2BSite({ tenant }: B2BSiteProps) {
                   onClick={() => setSelectedSegment(i)}
                   className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--primary)] hover:underline"
                 >
-                  View Formulations List ➔
+                  <span>View Formulations List</span>
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
                 </button>
               </div>
             ))}
@@ -381,7 +437,11 @@ export function B2BSite({ tenant }: B2BSiteProps) {
 
           <div className="grid md:grid-cols-3 gap-8">
             <div className="border-t-4 border-[var(--accent)] pt-6">
-              <div className="text-3xl mb-3">🛡️</div>
+              <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/15 text-[var(--accent)] flex items-center justify-center mb-4">
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
               <h3 className="text-xl font-bold font-display text-[var(--heading)]">
                 Direct Principal Sourcing
               </h3>
@@ -391,7 +451,11 @@ export function B2BSite({ tenant }: B2BSiteProps) {
             </div>
 
             <div className="border-t-4 border-[var(--accent)] pt-6">
-              <div className="text-3xl mb-3">❄️</div>
+              <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/15 text-[var(--accent)] flex items-center justify-center mb-4">
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v20M4.2 7l15.6 10M4.2 17 19.8 7M9.5 4l2.5 2 2.5-2M9.5 20l2.5-2 2.5 2" />
+                </svg>
+              </div>
               <h3 className="text-xl font-bold font-display text-[var(--heading)]">
                 Validated Cold Storage
               </h3>
@@ -401,7 +465,11 @@ export function B2BSite({ tenant }: B2BSiteProps) {
             </div>
 
             <div className="border-t-4 border-[var(--accent)] pt-6">
-              <div className="text-3xl mb-3">📑</div>
+              <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/15 text-[var(--accent)] flex items-center justify-center mb-4">
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
               <h3 className="text-xl font-bold font-display text-[var(--heading)]">
                 Institutional Trade Credit
               </h3>
@@ -490,15 +558,15 @@ export function B2BSite({ tenant }: B2BSiteProps) {
 
             <ul className="mt-6 space-y-3">
               <li className="flex items-center gap-3 text-sm font-semibold">
-                <span className="text-[var(--accent)] font-bold">✓</span>
+                <svg className="h-4 w-4 text-[var(--accent)] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
                 <span>Supply exclusively to licensed healthcare institutions and pharmacies</span>
               </li>
               <li className="flex items-center gap-3 text-sm font-semibold">
-                <span className="text-[var(--accent)] font-bold">✓</span>
+                <svg className="h-4 w-4 text-[var(--accent)] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
                 <span>Full batch, manufacturing, and expiry traceability on every invoice</span>
               </li>
               <li className="flex items-center gap-3 text-sm font-semibold">
-                <span className="text-[var(--accent)] font-bold">✓</span>
+                <svg className="h-4 w-4 text-[var(--accent)] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
                 <span>Direct manufacturer principal representation</span>
               </li>
             </ul>
@@ -545,15 +613,15 @@ export function B2BSite({ tenant }: B2BSiteProps) {
 
               <div className="mt-8 space-y-4 text-sm">
                 <div className="flex items-center gap-3">
-                  <span className="text-[#E3B15F]">✓</span>
+                  <svg className="h-4 w-4 text-[#E3B15F] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
                   <span>Supply restricted to verified medical trade buyers</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-[#E3B15F]">✓</span>
+                  <svg className="h-4 w-4 text-[#E3B15F] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
                   <span>Price list sent directly via WhatsApp or Email within 2 hours</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-[#E3B15F]">✓</span>
+                  <svg className="h-4 w-4 text-[#E3B15F] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
                   <span>Central Helpline: <a href="tel:+915120000000" className="text-[#E3B15F] font-bold">+91 512-0000000</a></span>
                 </div>
               </div>
@@ -562,7 +630,11 @@ export function B2BSite({ tenant }: B2BSiteProps) {
             <div className="p-8 sm:p-12">
               {leadSuccess ? (
                 <div className="text-center py-12">
-                  <div className="text-5xl mb-4">✅</div>
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-green-600 mb-4">
+                    <svg className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
                   <h3 className="text-2xl font-bold font-display text-[var(--heading)]">
                     Inquiry Received
                   </h3>
@@ -716,7 +788,9 @@ export function B2BSite({ tenant }: B2BSiteProps) {
           <div className="w-full max-w-lg rounded-2xl bg-[var(--surface)] p-6 shadow-2xl animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-4 border-b border-[var(--line)]">
               <div className="flex items-center gap-3">
-                <span className="text-3xl">{segments[selectedSegment].icon}</span>
+                <div className="w-10 h-10 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center">
+                  <SegmentIcon name={segments[selectedSegment].icon} />
+                </div>
                 <h3 className="text-xl font-bold font-display text-[var(--heading)]">
                   {segments[selectedSegment].title}
                 </h3>
@@ -724,8 +798,11 @@ export function B2BSite({ tenant }: B2BSiteProps) {
               <button
                 onClick={() => setSelectedSegment(null)}
                 className="text-lg font-bold text-[var(--muted)] hover:text-[var(--text)] p-1"
+                aria-label="Close"
               >
-                ✕
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
@@ -740,7 +817,7 @@ export function B2BSite({ tenant }: B2BSiteProps) {
               <ul className="space-y-1.5 text-sm">
                 {segments[selectedSegment].formulations.map((f) => (
                   <li key={f} className="flex items-center gap-2">
-                    <span className="text-[var(--accent)] font-bold">✓</span>
+                    <svg className="h-4 w-4 text-[var(--accent)] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
                     <span>{f}</span>
                   </li>
                 ))}

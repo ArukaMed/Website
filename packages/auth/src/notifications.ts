@@ -25,8 +25,8 @@ export async function sendLeadAlertEmail(payload: LeadNotificationPayload): Prom
 
   const subject =
     payload.sourceType === "VISITING_CARD_CREDIT"
-      ? `🚨 [Credit Request] ${payload.institutionName} via ${payload.employeeName || "Digital Card"}`
-      : `📦 [Wholesale RFQ] New Lead from ${payload.institutionName}`;
+      ? `[Credit Request] ${payload.institutionName} via ${payload.employeeName || "Digital Card"}`
+      : `[Wholesale RFQ] New Lead from ${payload.institutionName}`;
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #16253F; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">

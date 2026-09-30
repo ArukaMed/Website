@@ -134,8 +134,11 @@ export default function OpsPortalPage() {
                   </td>
                   <td className="py-3.5 px-4">
                     {ord.coldChainRequired ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
-                        ❄️ 2°C - 8°C Active
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                        <svg className="h-3.5 w-3.5 text-blue-700 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v20M4.2 7l15.6 10M4.2 17 19.8 7M9.5 4l2.5 2 2.5-2M9.5 20l2.5-2 2.5 2" />
+                        </svg>
+                        <span>2°C - 8°C Active</span>
                       </span>
                     ) : (
                       <span className="text-slate-500">Standard Ambient</span>
