@@ -233,46 +233,56 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
         id="card"
         className="relative mx-auto min-h-screen w-full max-w-[430px] overflow-hidden bg-ivory shadow-[0_0_60px_rgba(12,34,68,0.18)]"
       >
-        {/* Header: Brand Banner with Askew Line Logo and Brand Name */}
-        <header className="hdr-glow relative overflow-hidden px-6 pb-[68px] pt-8 text-white">
-          <div className="relative z-10 flex items-center gap-3">
+        {/* Header: Brand Banner with Wordmark on top-left and enlarged Line Art watermark overflowing top-right */}
+        <header className="hdr-glow relative overflow-hidden px-6 pb-[72px] pt-7 text-white">
+          {/* Top-left: Main Wordmark */}
+          <div className="relative z-10 flex items-center">
+            <img
+              src="/assets/logos/Wordmark_darkBG.png"
+              alt="Aruka Med"
+              className="h-9 sm:h-10 w-auto object-contain select-none drop-shadow-sm"
+            />
+          </div>
+
+          {/* Top-right: Enlarged Line Logo watermark, cropped by overflow-hidden */}
+          <div
+            className="pointer-events-none absolute -top-8 -right-12 z-0 h-52 w-52 sm:-top-10 sm:-right-14 sm:h-64 sm:w-64 select-none opacity-90 mix-blend-screen"
+            aria-hidden="true"
+          >
             <img
               src="/assets/logos/askew_line_logo.png"
-              alt="Aruka Med"
-              className="h-10 w-10 sm:h-11 sm:w-11 shrink-0 object-contain drop-shadow"
+              alt=""
+              className="h-full w-full object-contain"
             />
-            <span className="text-[20px] sm:text-[22px] font-bold font-display tracking-wide text-white">
-              Aruka Med
-            </span>
           </div>
         </header>
 
         {/* Profile Section */}
-        <section className="relative -mt-[58px] px-6" aria-labelledby="person-name">
+        <section className="relative -mt-[56px] px-6" aria-labelledby="person-name">
           <div
             id="avatar"
-            className="grid h-[112px] w-[112px] place-items-center overflow-hidden rounded-full bg-navy-mid text-[34px] font-light text-white ring-2 ring-gold ring-offset-4 ring-offset-ivory"
+            className="grid h-[108px] w-[108px] place-items-center overflow-hidden rounded-full bg-navy-mid border-[2.5px] border-gold text-[32px] font-light text-white shadow-xl"
             role="img"
             aria-label={`Profile photo of ${fullName}`}
           >
             {employee.avatarUrl ? (
               <img src={employee.avatarUrl} alt={fullName} className="h-full w-full object-cover" />
             ) : (
-              <span className="select-none font-bold text-2xl tracking-wider text-white">{initials}</span>
+              <span className="select-none font-semibold text-3xl tracking-wider text-white">{initials}</span>
             )}
           </div>
 
-          <h1 id="person-name" className="mt-4 text-[27px] font-extrabold leading-[1.15] text-heading">
+          <h1 id="person-name" className="mt-4 text-[28px] font-bold leading-[1.15] text-heading">
             {fullName}
           </h1>
           <p className="mt-1.5 text-[15px] leading-snug text-ink">{employee.designation}</p>
-          <p className="mt-1.5 flex items-center gap-1.5 text-[13.5px] font-semibold text-gold-deep">
+          <p className="mt-1.5 flex items-center gap-1.5 text-[14px] font-semibold text-gold-deep">
             <svg className="h-4 w-4 shrink-0 text-gold-deep" aria-hidden="true">
               <use href="#i-pin" />
             </svg>
             <span>{employee.territoryRegion}</span>
           </p>
-          <p className="mt-2 text-[13.5px] font-medium text-muted">{tenant.name}</p>
+          <p className="mt-2 text-[14px] font-medium text-muted">{tenant.name}</p>
         </section>
 
         {/* Primary Actions: Save Contact & Fast Reach */}
