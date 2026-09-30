@@ -70,6 +70,17 @@ export const arukaMedTenantSeed: NewTenantRecord = {
     enableCreditApplicationModal: true,
     enableLiveColdRoomTrace: true,
   },
+  websiteContent: {
+    heroHeadline: "Reliable Wholesale Pharmaceutical Supply for Pharmacies, Hospitals & Institutions",
+    heroSubheadline: "Licensed B2B distributor supplying genuine branded & generic medicines, critical care injectables, and cold-chain biologics with guaranteed 24-48 hour regional dispatch.",
+    statActiveSkus: "5,000+",
+    statBatchTraceability: "99.8%",
+    statColdChainSla: "2°C - 8°C",
+    statDispatchTime: "24-48 Hr",
+    whyPrincipalSourcing: "100% genuine inventory received directly from authorized pharmaceutical manufacturers, preventing spurious supplies and counterfeit lots.",
+    whyColdStorage: "Dedicated 2°C to 8°C cold rooms with automated multi-generator failovers for biologics, insulins, and critical vaccines.",
+    whyTradeCredit: "Automated GST-compliant invoicing, batch expiry tracking, and flexible 15-to-30 day trade credit for verified hospitals and clinics.",
+  },
 };
 
 export const amitSharmaEmployeeSeed: NewEmployeeRecord = {

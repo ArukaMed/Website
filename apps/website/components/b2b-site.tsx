@@ -268,10 +268,10 @@ export function B2BSite({ tenant }: B2BSiteProps) {
         <div className="wrap grid lg:grid-cols-[1.1fr_0.9fr] gap-12 items-center">
           <div>
             <h1 className="text-3xl sm:text-5xl font-bold font-display leading-tight tracking-tight">
-              Reliable Wholesale Pharmaceutical Supply for Pharmacies, Hospitals & Institutions
+              {tenant.websiteContent?.heroHeadline || "Reliable Wholesale Pharmaceutical Supply for Pharmacies, Hospitals & Institutions"}
             </h1>
             <p className="mt-5 text-base sm:text-lg text-[#C9D6EA] leading-relaxed max-w-xl">
-              Licensed B2B distributor supplying genuine branded & generic medicines, critical care injectables, and cold-chain biologics with guaranteed 24-48 hour regional dispatch.
+              {tenant.websiteContent?.heroSubheadline || "Licensed B2B distributor supplying genuine branded & generic medicines, critical care injectables, and cold-chain biologics with guaranteed 24-48 hour regional dispatch."}
             </p>
 
             <div className="mt-8 flex flex-wrap gap-4">
@@ -349,22 +349,30 @@ export function B2BSite({ tenant }: B2BSiteProps) {
         <div className="wrap mt-14 pt-8 border-t border-white/15">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center sm:text-left">
             <div>
-              <div className="text-3xl font-bold font-display text-[#E3B15F]">5,000+</div>
+              <div className="text-3xl font-bold font-display text-[#E3B15F]">
+                {tenant.websiteContent?.statActiveSkus || "5,000+"}
+              </div>
               <div className="text-sm font-semibold mt-1">Active SKUs</div>
               <div className="text-xs text-[#A9BAD5]">Branded & generic formulations</div>
             </div>
             <div>
-              <div className="text-3xl font-bold font-display text-[#E3B15F]">99.8%</div>
+              <div className="text-3xl font-bold font-display text-[#E3B15F]">
+                {tenant.websiteContent?.statBatchTraceability || "99.8%"}
+              </div>
               <div className="text-sm font-semibold mt-1">Batch Traceability</div>
               <div className="text-xs text-[#A9BAD5]">Genuine direct principal sourcing</div>
             </div>
             <div>
-              <div className="text-3xl font-bold font-display text-[#E3B15F]">2°C - 8°C</div>
+              <div className="text-3xl font-bold font-display text-[#E3B15F]">
+                {tenant.websiteContent?.statColdChainSla || "2°C - 8°C"}
+              </div>
               <div className="text-sm font-semibold mt-1">Cold Chain SLA</div>
               <div className="text-xs text-[#A9BAD5]">Dual-generator failover storage</div>
             </div>
             <div>
-              <div className="text-3xl font-bold font-display text-[#E3B15F]">24-48 Hr</div>
+              <div className="text-3xl font-bold font-display text-[#E3B15F]">
+                {tenant.websiteContent?.statDispatchTime || "24-48 Hr"}
+              </div>
               <div className="text-sm font-semibold mt-1">Regional Dispatch</div>
               <div className="text-xs text-[#A9BAD5]">Priority hospital & clinic delivery</div>
             </div>
@@ -446,7 +454,7 @@ export function B2BSite({ tenant }: B2BSiteProps) {
                 Direct Principal Sourcing
               </h3>
               <p className="mt-2 text-sm text-[var(--muted)] leading-relaxed">
-                100% genuine inventory received directly from authorized pharmaceutical manufacturers, preventing spurious supplies and counterfeit lots.
+                {tenant.websiteContent?.whyPrincipalSourcing || "100% genuine inventory received directly from authorized pharmaceutical manufacturers, preventing spurious supplies and counterfeit lots."}
               </p>
             </div>
 
@@ -460,7 +468,7 @@ export function B2BSite({ tenant }: B2BSiteProps) {
                 Validated Cold Storage
               </h3>
               <p className="mt-2 text-sm text-[var(--muted)] leading-relaxed">
-                Dedicated 2°C to 8°C cold rooms with automated multi-generator failovers for biologics, insulins, and critical vaccines.
+                {tenant.websiteContent?.whyColdStorage || "Dedicated 2°C to 8°C cold rooms with automated multi-generator failovers for biologics, insulins, and critical vaccines."}
               </p>
             </div>
 
@@ -474,7 +482,7 @@ export function B2BSite({ tenant }: B2BSiteProps) {
                 Institutional Trade Credit
               </h3>
               <p className="mt-2 text-sm text-[var(--muted)] leading-relaxed">
-                Automated GST-compliant invoicing, batch expiry tracking, and flexible 15-to-30 day trade credit for verified hospitals and clinics.
+                {tenant.websiteContent?.whyTradeCredit || "Automated GST-compliant invoicing, batch expiry tracking, and flexible 15-to-30 day trade credit for verified hospitals and clinics."}
               </p>
             </div>
           </div>

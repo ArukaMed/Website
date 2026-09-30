@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dataStore } from "@aegis/database";
 import type { EmployeeRecord } from "@aegis/database";
+import { getSessionFromRequest } from "@/lib/auth-session";
+import { assertAuthorized } from "@aegis/auth";
+import { UserRole } from "@aegis/types";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -12,6 +15,15 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const session = getSessionFromRequest(req);
+    // Enforce role check if authenticated
+    if (session) {
+      assertAuthorized({
+        user: session,
+        allowedRoles: [UserRole.SUPER_ADMIN, UserRole.BRAND_ADMIN],
+      });
+    }
+
     const body = await req.json();
     const tenantSlug = body.tenantSlug || process.env.DEFAULT_TENANT_SLUG || "arukamed";
     const tenant = await dataStore.getTenantBySlug(tenantSlug);
@@ -24,9 +36,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Missing required employee fields" }, { status: 400 });
     }
 
-    const slug =
-      body.slug?.trim() ||
-      `${body.firstName.toLowerCase()}-${body.lastName.toLowerCase()}-${Math.random().toString(36).substring(2, 6)}`;
+    const rawSlug = body.slug?.trim() || `${body.firstName.toLowerCase()}-${body.lastName.toLowerCase()}-${Math.random().toString(36).substring(2, 6)}`;
+    const slug = rawSlug.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-");
 
     const newEmp: EmployeeRecord = {
       id: crypto.randomUUID(),
@@ -34,17 +45,17 @@ export async function POST(req: NextRequest) {
       slug,
       firstName: body.firstName.trim(),
       lastName: body.lastName.trim(),
-      avatarUrl: body.avatarUrl || null,
-      designation: body.designation || "Sales Representative",
-      division: body.division || "Wholesale Sales",
-      territoryRegion: body.territoryRegion || "Regional",
+      avatarUrl: body.avatarUrl?.trim() || null,
+      designation: body.designation?.trim() || "Sales Representative",
+      division: body.division?.trim() || "Wholesale Sales",
+      territoryRegion: body.territoryRegion?.trim() || "Regional",
       phoneNumber: body.phoneNumber.trim(),
       whatsappNumber: (body.whatsappNumber || body.phoneNumber).trim(),
       email: body.email.trim(),
-      linkedinUrl: body.linkedinUrl || null,
-      officeExtension: body.officeExtension || "101",
-      customWhatsappTemplate: body.customWhatsappTemplate || null,
-      customRateCardUrl: body.customRateCardUrl || null,
+      linkedinUrl: body.linkedinUrl?.trim() || null,
+      officeExtension: body.officeExtension?.trim() || "101",
+      customWhatsappTemplate: body.customWhatsappTemplate?.trim() || null,
+      customRateCardUrl: body.customRateCardUrl?.trim() || null,
       isActive: true,
       scanCount: 0,
       vcardDownloads: 0,
@@ -61,12 +72,21 @@ export async function POST(req: NextRequest) {
       employee: newEmp,
     });
   } catch (err: any) {
-    return NextResponse.json({ message: err?.message || "Failed to add employee" }, { status: 500 });
+    const status = err?.message?.includes("Unauthorized") ? 403 : 500;
+    return NextResponse.json({ message: err?.message || "Failed to add employee" }, { status });
   }
 }
 
 export async function PATCH(req: NextRequest) {
   try {
+    const session = getSessionFromRequest(req);
+    if (session) {
+      assertAuthorized({
+        user: session,
+        allowedRoles: [UserRole.SUPER_ADMIN, UserRole.BRAND_ADMIN, UserRole.OPS_MANAGER],
+      });
+    }
+
     const body = await req.json();
     const tenantSlug = body.tenantSlug || process.env.DEFAULT_TENANT_SLUG || "arukamed";
     const employeeSlug = body.employeeSlug;
@@ -86,6 +106,36 @@ export async function PATCH(req: NextRequest) {
       employee: updated,
     });
   } catch (err: any) {
-    return NextResponse.json({ message: err?.message || "Failed to update employee" }, { status: 500 });
+    const status = err?.message?.includes("Unauthorized") ? 403 : 500;
+    return NextResponse.json({ message: err?.message || "Failed to update employee" }, { status });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = getSessionFromRequest(req);
+    if (session) {
+      assertAuthorized({
+        user: session,
+        allowedRoles: [UserRole.SUPER_ADMIN, UserRole.BRAND_ADMIN],
+      });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const tenantSlug = searchParams.get("tenant") || process.env.DEFAULT_TENANT_SLUG || "arukamed";
+    const employeeSlug = searchParams.get("employee");
+
+    if (!employeeSlug) {
+      return NextResponse.json({ message: "Employee slug required" }, { status: 400 });
+    }
+
+    const success = await dataStore.deleteEmployee(tenantSlug, employeeSlug);
+    return NextResponse.json({
+      success,
+      message: success ? "Employee deleted" : "Employee not found",
+    });
+  } catch (err: any) {
+    const status = err?.message?.includes("Unauthorized") ? 403 : 500;
+    return NextResponse.json({ message: err?.message || "Failed to delete employee" }, { status });
   }
 }

@@ -2,6 +2,7 @@ import { dataStore } from "@aegis/database";
 import { AdminDashboard } from "@/components/admin-dashboard";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
+import { getServerSession } from "@/lib/auth-session";
 
 export default async function AdminHomePage() {
   const headersList = await headers();
@@ -20,12 +21,14 @@ export default async function AdminHomePage() {
 
   const employees = await dataStore.getAllEmployees(tenant.slug);
   const leads = await dataStore.getAllLeads(tenant.slug);
+  const session = await getServerSession();
 
   return (
     <AdminDashboard
       initialTenant={tenant as any}
       initialEmployees={employees as any}
       initialLeads={leads as any}
+      initialSession={session}
     />
   );
 }

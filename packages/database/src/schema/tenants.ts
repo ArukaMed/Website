@@ -15,6 +15,7 @@ import type {
   TenantComplianceInfo,
   TenantCommercialSettings,
   TenantFeatureFlags,
+  TenantWebsiteContent,
 } from "@aegis/types";
 import { employees } from "./employees";
 import { leadInquiries } from "./leads";
@@ -40,6 +41,7 @@ export const tenants = pgTable(
     complianceInfo: jsonb("compliance_info").$type<TenantComplianceInfo>().notNull(),
     commercialSettings: jsonb("commercial_settings").$type<TenantCommercialSettings>().notNull(),
     featureFlags: jsonb("feature_flags").$type<TenantFeatureFlags>().notNull(),
+    websiteContent: jsonb("website_content").$type<TenantWebsiteContent>(),
 
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

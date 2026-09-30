@@ -125,6 +125,18 @@ class MemoryDataStore {
     this.tenantsMap.set(tenant.slug, tenant);
   }
 
+  async updateTenant(tenantSlug: string, patch: Partial<TenantRecord>): Promise<TenantRecord | null> {
+    const tenant = await this.getTenantBySlug(tenantSlug);
+    if (!tenant) return null;
+    const updated: TenantRecord = {
+      ...tenant,
+      ...patch,
+      updatedAt: new Date(),
+    };
+    this.tenantsMap.set(tenantSlug, updated);
+    return updated;
+  }
+
   async saveEmployee(tenantSlug: string, employee: EmployeeRecord): Promise<void> {
     this.employeesMap.set(`${tenantSlug}:${employee.slug}`, employee);
   }
@@ -143,6 +155,10 @@ class MemoryDataStore {
     };
     this.employeesMap.set(`${tenantSlug}:${employeeSlug}`, updated);
     return updated;
+  }
+
+  async deleteEmployee(tenantSlug: string, employeeSlug: string): Promise<boolean> {
+    return this.employeesMap.delete(`${tenantSlug}:${employeeSlug}`);
   }
 
   async incrementStat(
@@ -188,5 +204,14 @@ class MemoryDataStore {
   }
 }
 
-export const dataStore = new MemoryDataStore();
+declare global {
+  // eslint-disable-next-line no-var
+  var __arukaDataStore: MemoryDataStore | undefined;
+}
+
+export const dataStore = globalThis.__arukaDataStore ?? new MemoryDataStore();
+if (process.env.NODE_ENV !== "production") {
+  globalThis.__arukaDataStore = dataStore;
+}
+
 export { schema };
