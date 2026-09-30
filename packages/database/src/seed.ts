@@ -28,7 +28,7 @@ export const arukaMedTenantSeed: NewTenantRecord = {
     fontBody: "'Public Sans', system-ui, -apple-system, sans-serif",
   },
   complianceInfo: {
-    legalEntityName: "Aruka Med Pharmaceuticals Private Limited",
+    legalEntityName: "Aruka Med",
     gstin: "09ABCDE1234F1Z5",
     drugLicences: [
       { label: "Wholesale Drug Licence Form 20B", number: "UP-KNP-20B-000000" },

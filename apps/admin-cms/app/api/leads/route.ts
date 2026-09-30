@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dataStore } from "@aegis/database";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const tenantSlug = searchParams.get("tenant") || process.env.DEFAULT_TENANT_SLUG || "arukamed";

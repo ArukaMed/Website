@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { DEMO_ACCOUNTS, encodeSession, SESSION_COOKIE_NAME } from "@/lib/auth-session";
 import { UserRole, type UserRoleType, type UserSession } from "@aegis/types";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

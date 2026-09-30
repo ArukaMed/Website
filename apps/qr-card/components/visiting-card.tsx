@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { Tenant, Employee } from "@aegis/types";
 
 interface VisitingCardProps {
@@ -17,12 +17,31 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
   const [creditStatus, setCreditStatus] = useState<{ message: string; isError?: boolean } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Toggle theme
-  const toggleTheme = () => {
-    const next = themeMode === "light" ? "dark" : "light";
-    setThemeMode(next);
-    document.documentElement.setAttribute("data-theme", next);
-  };
+  // Automatically detect and synchronize with system color scheme (default to light)
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined" && window.matchMedia) {
+        const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+        const applyTheme = (isDark: boolean) => {
+          const mode = isDark ? "dark" : "light";
+          setThemeMode(mode);
+          document.documentElement.setAttribute("data-theme", mode);
+        };
+        // Initial detection
+        applyTheme(mediaQuery.matches);
+        // Live listener for OS theme shifts
+        const handler = (e: MediaQueryListEvent) => applyTheme(e.matches);
+        mediaQuery.addEventListener("change", handler);
+        return () => mediaQuery.removeEventListener("change", handler);
+      } else {
+        setThemeMode("light");
+        document.documentElement.setAttribute("data-theme", "light");
+      }
+    } catch {
+      setThemeMode("light");
+      document.documentElement.setAttribute("data-theme", "light");
+    }
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -214,26 +233,17 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
         id="card"
         className="relative mx-auto min-h-screen w-full max-w-[430px] overflow-hidden bg-ivory shadow-[0_0_60px_rgba(12,34,68,0.18)]"
       >
-        {/* Header: Brand Banner with Logo and Line-Icon Theme Toggle */}
+        {/* Header: Brand Banner with Askew Line Logo and Brand Name */}
         <header className="hdr-glow relative overflow-hidden px-6 pb-[68px] pt-8 text-white">
-          <div className="relative z-10 flex items-center justify-between">
+          <div className="relative z-10 flex items-center gap-3">
             <img
-              src={themeMode === "dark" && tenant.logoUrlDark ? tenant.logoUrlDark : tenant.logoUrlLight}
-              alt={tenant.name}
-              className="h-[34px] w-auto object-contain"
+              src="/assets/logos/askew_line_logo.png"
+              alt="Aruka Med"
+              className="h-10 w-10 sm:h-11 sm:w-11 shrink-0 object-contain drop-shadow"
             />
-            {/* Theme Toggle Button using Line Icons */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white/15 hover:bg-white/25 text-white backdrop-blur-sm transition-colors border border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
-              aria-label={themeMode === "light" ? "Switch to dark theme" : "Switch to light theme"}
-            >
-              <svg className="h-4 w-4 shrink-0" aria-hidden="true">
-                <use href={themeMode === "light" ? "#i-moon" : "#i-sun"} />
-              </svg>
-              <span>{themeMode === "light" ? "Dark" : "Light"}</span>
-            </button>
+            <span className="text-[20px] sm:text-[22px] font-bold font-display tracking-wide text-white">
+              Aruka Med
+            </span>
           </div>
         </header>
 
@@ -555,16 +565,15 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
 
         {/* Footer */}
         <footer className="mt-10 border-t border-line px-6 pt-6 pb-10 text-center">
-          <span className="mark-tile mx-auto inline-grid place-items-center">
+          <div className="mx-auto flex justify-center items-center mb-3">
             <img
-              src={themeMode === "dark" && tenant.logoUrlDark ? tenant.logoUrlDark : tenant.logoUrlLight}
-              alt=""
-              aria-hidden="true"
-              className="h-9 w-auto object-contain max-w-[140px]"
+              src="/assets/logos/logo.png"
+              alt="Aruka Med"
+              className="h-16 w-16 sm:h-20 sm:w-20 object-contain drop-shadow-md"
             />
-          </span>
-          <p className="mt-3 text-[13px] font-semibold text-heading">
-            {tenant.complianceInfo.legalEntityName || "Aruka Med Pharmaceuticals Private Limited"}
+          </div>
+          <p className="text-[14px] font-bold text-heading">
+            Aruka Med
           </p>
           <p className="mt-1 text-[12px] text-muted">
             <a

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { Tenant } from "@aegis/types";
 
 interface B2BSiteProps {
@@ -61,6 +61,27 @@ export function B2BSite({ tenant }: B2BSiteProps) {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Automatically detect and synchronize with system color scheme (default to light)
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined" && window.matchMedia) {
+        const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+        const applyTheme = (isDark: boolean) => {
+          const mode = isDark ? "dark" : "light";
+          document.documentElement.setAttribute("data-theme", mode);
+        };
+        applyTheme(mediaQuery.matches);
+        const handler = (e: MediaQueryListEvent) => applyTheme(e.matches);
+        mediaQuery.addEventListener("change", handler);
+        return () => mediaQuery.removeEventListener("change", handler);
+      } else {
+        document.documentElement.setAttribute("data-theme", "light");
+      }
+    } catch {
+      document.documentElement.setAttribute("data-theme", "light");
+    }
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -195,7 +216,7 @@ export function B2BSite({ tenant }: B2BSiteProps) {
             <img
               src={tenant.logoUrlLight}
               alt={tenant.name}
-              className="h-8 w-auto object-contain"
+              className="h-10 sm:h-11 w-auto max-w-[200px] object-contain"
             />
             <span className="hidden sm:block text-xs font-semibold text-[var(--muted)] border-l border-[var(--line)] pl-3 leading-tight">
               Wholesale
@@ -752,7 +773,7 @@ export function B2BSite({ tenant }: B2BSiteProps) {
       <footer className="bg-[var(--deep)] text-[#C4D2E8] pt-16 pb-12 text-sm">
         <div className="wrap grid md:grid-cols-3 gap-12">
           <div>
-            <img src={tenant.logoUrlDark || tenant.logoUrlLight} alt={tenant.name} className="h-8 w-auto mb-4" />
+            <img src={tenant.logoUrlDark || tenant.logoUrlLight} alt={tenant.name} className="h-11 sm:h-12 w-auto max-w-[220px] object-contain mb-4" />
             <p className="text-xs leading-relaxed text-[#B3C3DC] max-w-sm">
               {tenant.complianceInfo.legalEntityName} is a licensed wholesale pharmaceutical distributor supplying genuine batch-tracked formulations across northern India.
             </p>
