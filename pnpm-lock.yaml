@@ -231,7 +231,10 @@ importers:
         version: link:../types
       drizzle-orm:
         specifier: ^0.39.3
-        version: 0.39.3(@opentelemetry/api@1.9.1)
+        version: 0.39.3(@opentelemetry/api@1.9.1)(postgres@3.4.9)
+      postgres:
+        specifier: ^3.4.9
+        version: 3.4.9
     devDependencies:
       '@types/node':
         specifier: ^22.13.10
@@ -1798,6 +1801,10 @@ packages:
     resolution: {integrity: sha512-RRuzqDtt5Y9h3quz5hWhK+TPnsmVs6WwSU6LkJMeY4HstUEDuYTG8UJSdawMRzmzAtV+KEoG8N3Qg2qLy5vM/A==}
     engines: {node: ^10 || ^12 || >=14}
 
+  postgres@3.4.9:
+    resolution: {integrity: sha512-GD3qdB0x1z9xgFI6cdRD6xu2Sp2WCOEoe3mtnyB5Ee0XrrL5Pe+e4CCnJrRMnL1zYtRDZmQQVbvOttLnKDLnaw==}
+    engines: {node: '>=12'}
+
   posthog-js@1.435.0:
     resolution: {integrity: sha512-RXcsd0vssNDNAAMz6t6RTaen2QORqn90poQVoZi25ftXCF9Ct1CXuMl8fnkPYxmtP6tkTdbnBehbx07b/b/+5w==}
     peerDependencies:
@@ -2802,9 +2809,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.39.3(@opentelemetry/api@1.9.1):
+  drizzle-orm@0.39.3(@opentelemetry/api@1.9.1)(postgres@3.4.9):
     optionalDependencies:
       '@opentelemetry/api': 1.9.1
+      postgres: 3.4.9
 
   electron-to-chromium@1.5.440: {}
 
@@ -3138,6 +3146,8 @@ snapshots:
       nanoid: 3.3.19
       picocolors: 1.1.1
       source-map-js: 1.2.1
+
+  postgres@3.4.9: {}
 
   posthog-js@1.435.0(@types/react@19.3.0)(react@19.3.0):
     dependencies:
