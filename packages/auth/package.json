@@ -8,7 +8,9 @@
   },
   "dependencies": {
     "@aegis/types": "workspace:*",
-    "@supabase/supabase-js": "^2.117.2"
+    "@supabase/supabase-js": "^2.117.2",
+    "@upstash/ratelimit": "^2.2.0",
+    "@upstash/redis": "^1.39.0"
   },
   "devDependencies": {
     "@types/node": "^22.20.4",

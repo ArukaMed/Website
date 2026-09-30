@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyHoneypot, sanitizeHtmlText } from "@aegis/auth";
+import { verifyHoneypot, sanitizeHtmlText, leadRateLimiter } from "@aegis/auth";
 import { LeadInquiryInputSchema } from "@aegis/types";
 
 export async function POST(req: NextRequest) {
   try {
+    // 0. Rate limiting via Upstash Redis (if configured)
+    if (leadRateLimiter) {
+      const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+      const { success } = await leadRateLimiter.limit(ip);
+      if (!success) {
+        return NextResponse.json(
+          { message: "Too many requests. Please try again shortly." },
+          { status: 429 }
+        );
+      }
+    }
+
     const body = await req.json();
 
     // 1. Bot check via honeypot
