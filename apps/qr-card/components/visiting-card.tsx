@@ -224,47 +224,62 @@ export function VisitingCard({ tenant, employee, vcardUrl }: VisitingCardProps) 
       .catch((err) => console.error("QR Code generation error:", err));
   }, [vcfContent]);
 
+  // Pre-generate File objects in memory so navigator.share executes synchronously with active user gesture
+  const vcardFile = useMemo(() => {
+    if (!vcfContent) return null;
+    try {
+      return new File([vcfContent], cleanFilename, { type: "text/vcard" });
+    } catch {
+      return null;
+    }
+  }, [vcfContent, cleanFilename]);
+
+  const vcardFileLegacy = useMemo(() => {
+    if (!vcfContent) return null;
+    try {
+      return new File([vcfContent], cleanFilename, { type: "text/x-vcard" });
+    } catch {
+      return null;
+    }
+  }, [vcfContent, cleanFilename]);
+
   const handleSaveContact = async (e?: React.MouseEvent<HTMLAnchorElement>) => {
-    // 1. Primary: Native OS Share Sheet via Web Share API
-    // Passing a .vcf file to navigator.share() triggers an ACTION_SEND intent with MIME type text/vcard on Android
-    // and the native Contacts/Share prompt on iOS.
+    if (e) e.preventDefault();
+
+    // 1. Two-tier Web Share API with pre-generated files (no preceding await, preserves user activation)
     if (
       typeof navigator !== "undefined" &&
       typeof navigator.share === "function" &&
       typeof navigator.canShare === "function"
     ) {
-      try {
-        const file = new File([vcfContent], cleanFilename, { type: "text/vcard" });
-        if (navigator.canShare({ files: [file] })) {
-          if (e) e.preventDefault();
+      // Test standard MIME first, fallback to text/x-vcard if blocked by Android Chrome whitelist
+      let fileToShare = vcardFile;
+      if (!fileToShare || !navigator.canShare({ files: [fileToShare] })) {
+        fileToShare = vcardFileLegacy;
+      }
+
+      if (fileToShare && navigator.canShare({ files: [fileToShare] })) {
+        try {
           await navigator.share({
-            files: [file],
+            files: [fileToShare],
             title: fullName,
           });
           return; // Native system sheet / Contacts app opened directly!
-        }
-      } catch (err: any) {
-        if (err && err.name === "AbortError") {
-          if (e) e.preventDefault();
-          return; // User cancelled
+        } catch (err: any) {
+          if (err && err.name === "AbortError") {
+            return; // User closed sheet
+          }
+          console.warn("Share API failed, falling back:", err);
         }
       }
     }
 
-    // 2. Direct .vcf Server Navigation (window.location.href = vcardUrl)
-    // Server delivers Content-Type: text/vcard; charset=utf-8 with Content-Disposition: inline.
-    // iOS routes it to MobileAddressBook (the native "Open in Contacts" prompt).
-    // Android triggers the system intent chooser to open with Google Contacts / Phone dialer.
-    if (devicePlatform === "ios" || devicePlatform === "android") {
-      if (e) e.preventDefault();
-      window.location.href = vcardUrl;
-      return;
+    // 2. Direct server navigation fallback
+    // iOS Safari & Android Chrome handle Content-Type: text/vcard; charset=utf-8 with Content-Disposition: attachment
+    if (devicePlatform === "other") {
+      setIsSaveModalOpen(true);
     }
-
-    // On Desktop: trigger direct server navigation and show helper modal with instant QR code
-    if (e) e.preventDefault();
     window.location.href = vcardUrl;
-    setIsSaveModalOpen(true);
   };
 
   return (

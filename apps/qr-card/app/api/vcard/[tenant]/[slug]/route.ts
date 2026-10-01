@@ -123,14 +123,12 @@ export async function GET(
 
   const vcfString = lines.join("\r\n") + "\r\n";
 
-  return new NextResponse(vcfString, {
+  return new Response(vcfString, {
     status: 200,
     headers: {
       "Content-Type": "text/vcard; charset=utf-8",
-      "Content-Disposition": `inline; filename="${employee.slug}.vcf"`,
-      "Cache-Control": "no-cache, no-store, must-revalidate",
-      "Pragma": "no-cache",
-      "Expires": "0",
+      "Content-Disposition": `attachment; filename="${employee.slug || "contact"}.vcf"`,
+      "Cache-Control": "no-cache",
     },
   });
 }
