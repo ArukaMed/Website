@@ -19,8 +19,9 @@ interface OrderItem {
 export default function OpsPortalPage() {
   const [session, setSession] = useState<UserSession | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [loginEmail, setLoginEmail] = useState("ops@arukamed.com");
-  const [loginPassword, setLoginPassword] = useState("ArukaOps@2026!");
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -99,6 +100,7 @@ export default function OpsPortalPage() {
       }
 
       setSession(data.session);
+      setLoginPassword("");
     } catch {
       setLoginError("Network connection error. Please try again.");
     } finally {
@@ -167,28 +169,41 @@ export default function OpsPortalPage() {
               <input
                 type="email"
                 required
+                autoComplete="email"
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
-                placeholder="ops@arukamed.com"
+                placeholder="name@arukamed.com"
                 className="w-full h-11 px-3.5 rounded-xl bg-[#09162D] border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#E3B15F] transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Security Password / Passcode</label>
-              <input
-                type="password"
-                required
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full h-11 px-3.5 rounded-xl bg-[#09162D] border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#E3B15F] transition-all"
-              />
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-slate-300">Security Password</label>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-[11px] text-[#E3B15F] hover:text-[#d09f4e] font-medium transition-colors"
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  autoComplete="current-password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="Enter your security password"
+                  className="w-full h-11 px-3.5 rounded-xl bg-[#09162D] border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#E3B15F] transition-all"
+                />
+              </div>
             </div>
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !loginEmail || !loginPassword}
               className="w-full h-11 mt-2 rounded-xl bg-[#E3B15F] hover:bg-[#d09f4e] text-[#071426] font-bold text-sm transition-all shadow-lg shadow-[#E3B15F]/20 flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isSubmitting ? (
@@ -206,33 +221,6 @@ export default function OpsPortalPage() {
               )}
             </button>
           </form>
-
-          {/* Quick-fill helper for verified operators */}
-          <div className="mt-6 pt-6 border-t border-white/10 text-center">
-            <span className="text-[11px] text-slate-400 font-medium block mb-2">Authorized Demo Operator Accounts</span>
-            <div className="flex justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setLoginEmail("ops@arukamed.com");
-                  setLoginPassword("ArukaOps@2026!");
-                }}
-                className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-mono text-slate-300 transition-colors"
-              >
-                ops@arukamed.com
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setLoginEmail("admin@arukamed.com");
-                  setLoginPassword("ArukaAdmin@2026!");
-                }}
-                className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-mono text-slate-300 transition-colors"
-              >
-                admin@arukamed.com
-              </button>
-            </div>
-          </div>
         </div>
 
         <p className="mt-8 text-center text-xs text-slate-500">

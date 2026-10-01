@@ -23,7 +23,6 @@ export interface AuthorizedAccount {
   passwordHash: string;
   allowedPortals: ("admin" | "ops")[];
   description: string;
-  plainPasswordHint: string; // Displayed on demo credential helper
 }
 
 /**
@@ -33,33 +32,39 @@ export interface AuthorizedAccount {
 export const AUTHORIZED_ACCOUNTS: AuthorizedAccount[] = [
   {
     email: "admin@arukamed.com",
-    fullName: "Vikram Malhotra",
+    fullName: "Aruka Administrator",
     role: UserRole.BRAND_ADMIN,
     tenantSlug: "arukamed",
     passwordHash: hashPassword(process.env.ADMIN_PASSWORD || "ArukaAdmin@2026!"),
     allowedPortals: ["admin", "ops"],
-    description: "Brand Admin — Full access to edit corporate compliance, website CMS & manage team",
-    plainPasswordHint: "ArukaAdmin@2026!",
+    description: "Brand Admin — Full access to corporate compliance, website CMS & team management",
+  },
+  {
+    email: "abhishikt@arukamed.com",
+    fullName: "Abhishikt Emmanuel Prakash",
+    role: UserRole.BRAND_ADMIN,
+    tenantSlug: "arukamed",
+    passwordHash: hashPassword(process.env.ABHISHIKT_PASSWORD || "ArukaAdmin@2026!"),
+    allowedPortals: ["admin", "ops"],
+    description: "General Manager & Brand Administrator",
   },
   {
     email: "superadmin@aegis.com",
-    fullName: "System Overseer",
+    fullName: "Security Administrator",
     role: UserRole.SUPER_ADMIN,
     tenantSlug: "arukamed",
     passwordHash: hashPassword(process.env.SUPERADMIN_PASSWORD || "SuperAdmin@Aegis2026!"),
     allowedPortals: ["admin", "ops"],
-    description: "Super Admin — Unrestricted system governance, platform tokens & tenant management",
-    plainPasswordHint: "SuperAdmin@Aegis2026!",
+    description: "Super Admin — System governance & security management",
   },
   {
     email: "ops@arukamed.com",
-    fullName: "Pooja Deshmukh",
+    fullName: "Operations Desk",
     role: UserRole.OPS_MANAGER,
     tenantSlug: "arukamed",
     passwordHash: hashPassword(process.env.OPS_PASSWORD || "ArukaOps@2026!"),
     allowedPortals: ["ops"],
-    description: "Operations Manager — Wholesale dispatch queue, cold chain tracking & order verification",
-    plainPasswordHint: "ArukaOps@2026!",
+    description: "Operations Manager — Dispatch queue, cold chain tracking & order verification",
   },
   {
     email: "amit.sharma@arukamed.com",
@@ -68,8 +73,7 @@ export const AUTHORIZED_ACCOUNTS: AuthorizedAccount[] = [
     tenantSlug: "arukamed",
     passwordHash: hashPassword(process.env.REP_PASSWORD || "AmitSharma@2026!"),
     allowedPortals: ["admin"],
-    description: "Sales Representative — View assigned visiting card, QR studio & rep-assigned leads",
-    plainPasswordHint: "AmitSharma@2026!",
+    description: "Sales Representative — Assigned visiting card & inquiry management",
   },
 ];
 
