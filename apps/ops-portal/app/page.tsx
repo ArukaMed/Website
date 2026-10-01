@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import type { UserSession } from "@aegis/types";
 
 interface OrderItem {
   id: string;
@@ -16,6 +17,13 @@ interface OrderItem {
 }
 
 export default function OpsPortalPage() {
+  const [session, setSession] = useState<UserSession | null>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [loginEmail, setLoginEmail] = useState("ops@arukamed.com");
+  const [loginPassword, setLoginPassword] = useState("ArukaOps@2026!");
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [orders, setOrders] = useState<OrderItem[]>([
     {
       id: "ord-101",
@@ -53,24 +61,216 @@ export default function OpsPortalPage() {
     },
   ]);
 
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const res = await fetch("/api/auth/session");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.session) {
+            setSession(data.session);
+          }
+        }
+      } catch {
+        // Unauthenticated
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    }
+    checkAuth();
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError(null);
+    setIsSubmitting(true);
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setLoginError(data.message || "Failed to sign in. Verify your authorized credentials.");
+        return;
+      }
+
+      setSession(data.session);
+    } catch {
+      setLoginError("Network connection error. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // ignore
+    }
+    setSession(null);
+  };
+
   const updateStatus = (id: string, nextStatus: OrderItem["status"]) => {
     setOrders((prev) =>
       prev.map((o) => (o.id === id ? { ...o, status: nextStatus } : o))
     );
   };
 
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-[#071426] flex items-center justify-center text-white">
+        <div className="flex items-center gap-3">
+          <div className="h-6 w-6 rounded-full border-2 border-[#E3B15F] border-t-transparent animate-spin"></div>
+          <span className="text-sm font-medium text-slate-300">Verifying secure operations session...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Secure Login Screen for Ops Portal
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-[#071426] flex flex-col justify-center items-center px-4 py-12 relative overflow-hidden">
+        {/* Ambient background glow */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="w-full max-w-md bg-[#0D2040] border border-white/10 rounded-3xl p-8 shadow-2xl relative z-10 backdrop-blur-md">
+          {/* Logo & Header */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E3B15F]/15 border border-[#E3B15F]/30 text-[#E3B15F] text-[11px] font-bold tracking-wider uppercase mb-3">
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <span>Encrypted Operations Portal</span>
+            </div>
+            <h1 className="text-2xl font-extrabold text-white tracking-tight">Aruka Med Logistics</h1>
+            <p className="text-xs text-slate-400 mt-1">Authorized wholesale dispatch & cold chain control desk</p>
+          </div>
+
+          {loginError && (
+            <div className="mb-6 rounded-xl bg-red-500/15 border border-red-500/30 p-3.5 text-xs text-red-200 flex items-start gap-2.5">
+              <svg className="h-4 w-4 text-red-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span>{loginError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Operator Work Email</label>
+              <input
+                type="email"
+                required
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="ops@arukamed.com"
+                className="w-full h-11 px-3.5 rounded-xl bg-[#09162D] border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#E3B15F] transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Security Password / Passcode</label>
+              <input
+                type="password"
+                required
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                placeholder="••••••••••••"
+                className="w-full h-11 px-3.5 rounded-xl bg-[#09162D] border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#E3B15F] transition-all"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full h-11 mt-2 rounded-xl bg-[#E3B15F] hover:bg-[#d09f4e] text-[#071426] font-bold text-sm transition-all shadow-lg shadow-[#E3B15F]/20 flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="h-4 w-4 rounded-full border-2 border-[#071426] border-t-transparent animate-spin"></div>
+                  <span>Verifying credentials...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                  </svg>
+                  <span>Authorize & Access Ops Desk</span>
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Quick-fill helper for verified operators */}
+          <div className="mt-6 pt-6 border-t border-white/10 text-center">
+            <span className="text-[11px] text-slate-400 font-medium block mb-2">Authorized Demo Operator Accounts</span>
+            <div className="flex justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginEmail("ops@arukamed.com");
+                  setLoginPassword("ArukaOps@2026!");
+                }}
+                className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-mono text-slate-300 transition-colors"
+              >
+                ops@arukamed.com
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginEmail("admin@arukamed.com");
+                  setLoginPassword("ArukaAdmin@2026!");
+                }}
+                className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-mono text-slate-300 transition-colors"
+              >
+                admin@arukamed.com
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <p className="mt-8 text-center text-xs text-slate-500">
+          Strict statutory access control in compliance with CDSCO Form 20B/21B wholesale drug distribution rules.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col">
       {/* Header */}
-      <header className="h-16 bg-[#0E2444] text-white flex items-center justify-between px-6 border-b border-white/10">
+      <header className="h-16 bg-[#0E2444] text-white flex items-center justify-between px-6 border-b border-white/10 shadow-sm">
         <div className="flex items-center gap-3">
-          <span className="font-bold text-lg text-[#E3B15F]">Aegis-B2B</span>
+          <span className="font-bold text-lg text-[#E3B15F]">Aruka Med</span>
           <span className="text-xs bg-white/10 px-2.5 py-0.5 rounded text-slate-300">
             Wholesale Operations & Dispatch Portal
           </span>
         </div>
-        <div className="text-xs text-slate-300">
-          Operator Desk: <strong className="text-white">Central Warehouse A</strong>
+        <div className="flex items-center gap-4">
+          <div className="text-xs text-slate-300 hidden sm:block">
+            Desk: <strong className="text-white">Central Warehouse A</strong>
+          </div>
+          <div className="flex items-center gap-2 pl-4 border-l border-white/10">
+            <div className="text-right">
+              <div className="text-xs font-bold text-white">{session.fullName}</div>
+              <div className="text-[10px] text-[#E3B15F] font-mono uppercase">{session.role}</div>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors"
+              title="Sign Out"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -80,15 +280,21 @@ export default function OpsPortalPage() {
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <span className="text-xs text-slate-500 uppercase font-semibold block">Pending Verification</span>
-            <span className="text-2xl font-bold text-slate-900 mt-1 block">1 Order</span>
+            <span className="text-2xl font-bold text-slate-900 mt-1 block">
+              {orders.filter((o) => o.status === "SUBMITTED").length} Order
+            </span>
           </div>
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <span className="text-xs text-slate-500 uppercase font-semibold block">Cold Chain Packing</span>
-            <span className="text-2xl font-bold text-blue-600 mt-1 block">1 Order</span>
+            <span className="text-2xl font-bold text-blue-600 mt-1 block">
+              {orders.filter((o) => o.status === "COLD_CHAIN_PACKED").length} Order
+            </span>
           </div>
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <span className="text-xs text-slate-500 uppercase font-semibold block">Ready for Dispatch</span>
-            <span className="text-2xl font-bold text-amber-600 mt-1 block">1 Order</span>
+            <span className="text-2xl font-bold text-amber-600 mt-1 block">
+              {orders.filter((o) => o.status === "PO_VERIFIED").length} Order
+            </span>
           </div>
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <span className="text-xs text-slate-500 uppercase font-semibold block">24h Dispatch SLA</span>
@@ -199,3 +405,4 @@ export default function OpsPortalPage() {
     </div>
   );
 }
+

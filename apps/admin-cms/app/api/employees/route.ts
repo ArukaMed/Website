@@ -18,13 +18,13 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = getSessionFromRequest(req);
-    // Enforce role check if authenticated
-    if (session) {
-      assertAuthorized({
-        user: session,
-        allowedRoles: [UserRole.SUPER_ADMIN, UserRole.BRAND_ADMIN],
-      });
+    if (!session) {
+      return NextResponse.json({ message: "Authentication required" }, { status: 401 });
     }
+    assertAuthorized({
+      user: session,
+      allowedRoles: [UserRole.SUPER_ADMIN, UserRole.BRAND_ADMIN],
+    });
 
     const body = await req.json();
     const tenantSlug = body.tenantSlug || process.env.DEFAULT_TENANT_SLUG || "arukamed";
@@ -82,12 +82,13 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const session = getSessionFromRequest(req);
-    if (session) {
-      assertAuthorized({
-        user: session,
-        allowedRoles: [UserRole.SUPER_ADMIN, UserRole.BRAND_ADMIN, UserRole.OPS_MANAGER],
-      });
+    if (!session) {
+      return NextResponse.json({ message: "Authentication required" }, { status: 401 });
     }
+    assertAuthorized({
+      user: session,
+      allowedRoles: [UserRole.SUPER_ADMIN, UserRole.BRAND_ADMIN, UserRole.OPS_MANAGER],
+    });
 
     const body = await req.json();
     const tenantSlug = body.tenantSlug || process.env.DEFAULT_TENANT_SLUG || "arukamed";
@@ -116,12 +117,13 @@ export async function PATCH(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const session = getSessionFromRequest(req);
-    if (session) {
-      assertAuthorized({
-        user: session,
-        allowedRoles: [UserRole.SUPER_ADMIN, UserRole.BRAND_ADMIN],
-      });
+    if (!session) {
+      return NextResponse.json({ message: "Authentication required" }, { status: 401 });
     }
+    assertAuthorized({
+      user: session,
+      allowedRoles: [UserRole.SUPER_ADMIN, UserRole.BRAND_ADMIN],
+    });
 
     const { searchParams } = new URL(req.url);
     const tenantSlug = searchParams.get("tenant") || process.env.DEFAULT_TENANT_SLUG || "arukamed";

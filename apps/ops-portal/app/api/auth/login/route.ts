@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyCredentials, createSignedSessionToken, SESSION_COOKIE_NAME } from "@aegis/auth";
+import { verifyCredentials, createSignedSessionToken, OPS_SESSION_COOKIE_NAME } from "@aegis/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -15,10 +15,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = verifyCredentials(email, password, "admin");
+    const result = verifyCredentials(email, password, "ops");
     if (!result.success || !result.session) {
       return NextResponse.json(
-        { message: result.error || "Invalid authorized credentials" },
+        { message: result.error || "Invalid authorized operations credentials" },
         { status: 401 }
       );
     }
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     });
 
     response.cookies.set({
-      name: SESSION_COOKIE_NAME,
+      name: OPS_SESSION_COOKIE_NAME,
       value: token,
       httpOnly: false,
       path: "/",
@@ -47,4 +47,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: err?.message || "Sign-in failed" }, { status: 400 });
   }
 }
-

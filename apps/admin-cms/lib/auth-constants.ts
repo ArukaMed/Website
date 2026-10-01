@@ -1,6 +1,14 @@
-import { UserRole, type UserRoleType, type UserSession } from "@aegis/types";
+import {
+  SESSION_COOKIE_NAME,
+  AUTHORIZED_ACCOUNTS,
+  createSignedSessionToken,
+  verifySignedSessionToken,
+  type AuthorizedAccount,
+} from "@aegis/auth";
+import type { UserRoleType, UserSession } from "@aegis/types";
 
-export const SESSION_COOKIE_NAME = "aegis_session";
+export { SESSION_COOKIE_NAME, AUTHORIZED_ACCOUNTS };
+export type { AuthorizedAccount };
 
 export interface DemoUser {
   email: string;
@@ -8,61 +16,23 @@ export interface DemoUser {
   role: UserRoleType;
   tenantSlug: string;
   description: string;
+  plainPasswordHint?: string;
 }
 
-export const DEMO_ACCOUNTS: DemoUser[] = [
-  {
-    email: "admin@arukamed.com",
-    fullName: "Vikram Malhotra",
-    role: UserRole.BRAND_ADMIN,
-    tenantSlug: "arukamed",
-    description: "Brand Admin — Full access to edit corporate details, website CMS, QR settings & employees",
-  },
-  {
-    email: "superadmin@aegis.com",
-    fullName: "System Overseer",
-    role: UserRole.SUPER_ADMIN,
-    tenantSlug: "arukamed",
-    description: "Super Admin — Cross-tenant governance, system configurations & unrestricted permissions",
-  },
-  {
-    email: "ops@arukamed.com",
-    fullName: "Pooja Deshmukh",
-    role: UserRole.OPS_MANAGER,
-    tenantSlug: "arukamed",
-    description: "Operations Manager — Employee card status & lead tracking; read-only corporate settings",
-  },
-  {
-    email: "amit.sharma@arukamed.com",
-    fullName: "Amit Sharma",
-    role: UserRole.SALES_REP,
-    tenantSlug: "arukamed",
-    description: "Sales Representative — View personal visiting card preview, QR code & rep-assigned leads",
-  },
-];
+export const DEMO_ACCOUNTS: DemoUser[] = AUTHORIZED_ACCOUNTS.map((a) => ({
+  email: a.email,
+  fullName: a.fullName,
+  role: a.role,
+  tenantSlug: a.tenantSlug,
+  description: a.description,
+  plainPasswordHint: a.plainPasswordHint,
+}));
 
 export function encodeSession(session: UserSession): string {
-  const jsonStr = JSON.stringify(session);
-  if (typeof window !== "undefined") {
-    return btoa(unescape(encodeURIComponent(jsonStr)));
-  }
-  return Buffer.from(jsonStr, "utf-8").toString("base64url");
+  return createSignedSessionToken(session);
 }
 
 export function decodeSession(token: string): UserSession | null {
-  try {
-    let jsonStr: string;
-    if (typeof window !== "undefined") {
-      jsonStr = decodeURIComponent(escape(atob(token)));
-    } else {
-      jsonStr = Buffer.from(token, "base64url").toString("utf-8");
-    }
-    const data = JSON.parse(jsonStr) as UserSession;
-    if (data && data.email && data.role) {
-      return data;
-    }
-    return null;
-  } catch {
-    return null;
-  }
+  return verifySignedSessionToken(token);
 }
+

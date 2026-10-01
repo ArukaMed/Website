@@ -19,9 +19,9 @@ export default async function AdminHomePage() {
     notFound();
   }
 
-  const employees = await dataStore.getAllEmployees(tenant.slug);
-  const leads = await dataStore.getAllLeads(tenant.slug);
   const session = await getServerSession();
+  const employees = session ? await dataStore.getAllEmployees(tenant.slug) : [];
+  const leads = session ? await dataStore.getAllLeads(tenant.slug) : [];
 
   return (
     <AdminDashboard

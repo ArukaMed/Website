@@ -19,20 +19,35 @@ export function AdminDashboard({
   initialLeads = [],
   initialSession = null,
 }: AdminDashboardProps) {
-  // Authentication & RBAC Session State
-  const [session, setSession] = useState<UserSession | null>(
-    initialSession || {
-      userId: "usr-default-admin",
-      email: "admin@arukamed.com",
-      fullName: "Vikram Malhotra",
-      role: UserRole.BRAND_ADMIN,
-      tenantSlug: initialTenant.slug,
-    }
-  );
+  // Authentication & RBAC Session State (strictly null if not authenticated)
+  const [session, setSession] = useState<UserSession | null>(initialSession);
   const [loginEmail, setLoginEmail] = useState("admin@arukamed.com");
-  const [loginPassword, setLoginPassword] = useState("••••••••");
+  const [loginPassword, setLoginPassword] = useState("ArukaAdmin@2026!");
+  const [loginError, setLoginError] = useState<string | null>(null);
   const [selectedDemoRole, setSelectedDemoRole] = useState<UserRoleType>(UserRole.BRAND_ADMIN);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
+
+  // Collapsible Sidebar & Mobile Navigation State
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  // Employee Edit Modal State
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
+  const [editDesignation, setEditDesignation] = useState("");
+  const [editDivision, setEditDivision] = useState("");
+  const [editTerritory, setEditTerritory] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editWhatsapp, setEditWhatsapp] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editOfficeExt, setEditOfficeExt] = useState("");
+  const [editLinkedin, setEditLinkedin] = useState("");
+  const [editCustomWhatsapp, setEditCustomWhatsapp] = useState("");
+  const [editCustomRateCard, setEditCustomRateCard] = useState("");
+  const [editIsActive, setEditIsActive] = useState(true);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Core CMS Data State
   const [tenant, setTenant] = useState<Tenant>(initialTenant);
@@ -118,39 +133,60 @@ export function AdminDashboard({
   const canManageEmployees = session?.role === UserRole.SUPER_ADMIN || session?.role === UserRole.BRAND_ADMIN;
   const canToggleRepStatus = session?.role === UserRole.SUPER_ADMIN || session?.role === UserRole.BRAND_ADMIN || session?.role === UserRole.OPS_MANAGER;
 
-  // Handle Login / Demo Switcher
-  const handleLogin = async (e?: React.FormEvent, directDemoUser?: (typeof DEMO_ACCOUNTS)[0]) => {
+  // Handle Secure Login
+  const handleLogin = async (e?: React.FormEvent, directEmail?: string, directPassword?: string) => {
     if (e) e.preventDefault();
     setIsAuthLoading(true);
+    setLoginError(null);
 
-    const targetAccount = directDemoUser || DEMO_ACCOUNTS.find((a) => a.role === selectedDemoRole) || DEMO_ACCOUNTS[0];
+    const emailToSend = directEmail || loginEmail;
+    const passwordToSend = directPassword || loginPassword;
 
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: targetAccount.email,
-          fullName: targetAccount.fullName,
-          role: targetAccount.role,
+          email: emailToSend,
+          password: passwordToSend,
         }),
       });
 
       const data = await res.json();
-      if (data.session) {
-        setSession(data.session);
-        showToast(`Authenticated as ${data.session.fullName} (${data.session.role})`);
+      if (!res.ok) {
+        setLoginError(data.message || "Invalid credentials. Please verify your authorized access.");
+        showToast(data.message || "Authentication failed");
+        return;
+      }
+
+      setSession(data.session);
+      showToast(`Signed in as ${data.session.fullName} (${data.session.role})`);
+
+      // Refresh employees & leads now that session is authenticated
+      try {
+        const empRes = await fetch(`/api/employees?tenant=${tenant.slug}`);
+        if (empRes.ok) {
+          const empData = await empRes.json();
+          if (empData.employees?.length) {
+            setEmployees(empData.employees);
+            if (!selectedEmployeeSlug && empData.employees[0]) {
+              setSelectedEmployeeSlug(empData.employees[0].slug);
+            }
+          }
+        }
+        const leadsRes = await fetch(`/api/leads?tenant=${tenant.slug}`);
+        if (leadsRes.ok) {
+          const leadsData = await leadsRes.json();
+          if (leadsData.leads?.length) {
+            setLeads(leadsData.leads);
+          }
+        }
+      } catch {
+        // Non-blocking background fetch
       }
     } catch {
-      // Fallback local session if offline
-      setSession({
-        userId: "usr-fallback",
-        email: targetAccount.email,
-        fullName: targetAccount.fullName,
-        role: targetAccount.role,
-        tenantSlug: targetAccount.tenantSlug,
-      });
-      showToast(`Switched role to ${targetAccount.role}`);
+      setLoginError("Network connection error. Please verify the service is running.");
+      showToast("Network error during sign-in");
     } finally {
       setIsAuthLoading(false);
     }
@@ -164,6 +200,82 @@ export function AdminDashboard({
     }
     setSession(null);
     showToast("Signed out from Admin CMS");
+  };
+
+  // Open Edit Employee Modal and populate state
+  const openEditEmployee = (emp: Employee) => {
+    setEditingEmployee(emp);
+    setEditFirstName(emp.firstName || "");
+    setEditLastName(emp.lastName || "");
+    setEditDesignation(emp.designation || "");
+    setEditDivision(emp.division || "");
+    setEditTerritory(emp.territoryRegion || "");
+    setEditPhone(emp.phoneNumber || "");
+    setEditWhatsapp(emp.whatsappNumber || emp.phoneNumber || "");
+    setEditEmail(emp.email || "");
+    setEditOfficeExt(emp.officeExtension || "");
+    setEditLinkedin(emp.linkedinUrl || "");
+    setEditCustomWhatsapp(emp.customWhatsappTemplate || "");
+    setEditCustomRateCard(emp.customRateCardUrl || "");
+    setEditIsActive(emp.isActive ?? true);
+    setIsEditOpen(true);
+  };
+
+  // Submit Representative Updates
+  const handleSaveEditEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEmployee) return;
+    setIsSavingEdit(true);
+
+    try {
+      const patch = {
+        firstName: editFirstName.trim(),
+        lastName: editLastName.trim(),
+        designation: editDesignation.trim(),
+        division: editDivision.trim(),
+        territoryRegion: editTerritory.trim(),
+        phoneNumber: editPhone.trim(),
+        whatsappNumber: editWhatsapp.trim(),
+        email: editEmail.trim(),
+        officeExtension: editOfficeExt.trim(),
+        linkedinUrl: editLinkedin.trim() || null,
+        customWhatsappTemplate: editCustomWhatsapp.trim() || null,
+        customRateCardUrl: editCustomRateCard.trim() || null,
+        isActive: editIsActive,
+      };
+
+      const res = await fetch("/api/employees", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantSlug: tenant.slug,
+          employeeSlug: editingEmployee.slug,
+          patch,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(`Failed: ${data.message || "Error updating employee"}`);
+        return;
+      }
+
+      setEmployees((prev) =>
+        prev.map((emp) =>
+          emp.id === editingEmployee.id
+            ? { ...emp, ...patch, updatedAt: new Date() }
+            : emp
+        )
+      );
+
+      showToast(`Updated ${editFirstName} ${editLastName}'s profile & digital card`);
+      setIsEditOpen(false);
+      setEditingEmployee(null);
+    } catch {
+      showToast("Network error while updating representative");
+    } finally {
+      setIsSavingEdit(false);
+    }
   };
 
   // Save All Details (Shared, Website, Card)
@@ -479,28 +591,33 @@ export function AdminDashboard({
           <div className="bg-slate-800/90 border border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md">
             {/* Quick Demo Switcher Section */}
             <div className="mb-6">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-amber-400 mb-2.5">
-                Quick-Select RBAC Role for Testing
-              </label>
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="flex items-center justify-between mb-2.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-amber-400">
+                  Authorized Enterprise Accounts
+                </label>
+                <span className="text-[11px] text-slate-400 font-mono">Select to auto-fill</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {DEMO_ACCOUNTS.map((acc) => {
-                  const isSelected = selectedDemoRole === acc.role;
+                  const isSelected = loginEmail.toLowerCase() === acc.email.toLowerCase();
                   return (
                     <button
-                      key={acc.role}
+                      key={acc.role + acc.email}
                       type="button"
                       onClick={() => {
                         setSelectedDemoRole(acc.role);
                         setLoginEmail(acc.email);
+                        setLoginPassword(acc.plainPasswordHint || "ArukaAdmin@2026!");
+                        setLoginError(null);
                       }}
                       className={`p-3 text-left rounded-2xl border transition-all ${
                         isSelected
-                          ? "border-amber-400 bg-amber-400/10 text-white shadow-sm"
-                          : "border-slate-700 bg-slate-900/60 text-slate-300 hover:border-slate-600"
+                          ? "border-amber-400 bg-amber-400/10 text-white shadow-sm ring-1 ring-amber-400/50"
+                          : "border-slate-700 bg-slate-900/60 text-slate-300 hover:border-slate-600 hover:bg-slate-900"
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs">{acc.fullName}</span>
+                        <span className="font-bold text-xs text-white">{acc.fullName}</span>
                         <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${
                           acc.role === UserRole.SUPER_ADMIN ? "bg-purple-900/80 text-purple-300" :
                           acc.role === UserRole.BRAND_ADMIN ? "bg-blue-900/80 text-blue-300" :
@@ -510,49 +627,58 @@ export function AdminDashboard({
                           {acc.role}
                         </span>
                       </div>
-                      <div className="text-[11px] text-slate-400 font-mono mt-1">{acc.email}</div>
+                      <div className="text-[11px] text-slate-400 font-mono mt-1 truncate">{acc.email}</div>
                     </button>
                   );
                 })}
               </div>
             </div>
 
+            {loginError && (
+              <div className="mb-4 rounded-xl bg-red-500/15 border border-red-500/30 p-3.5 text-xs text-red-200 flex items-start gap-2.5 animate-in fade-in duration-150">
+                <svg className="h-4 w-4 text-red-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>{loginError}</span>
+              </div>
+            )}
+
             <form onSubmit={(e) => handleLogin(e)} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Official Email Address</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Official Authorized Email</label>
                 <input
                   type="email"
                   required
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-amber-400"
+                  className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Security Password / Passkey</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Security Password</label>
                 <input
                   type="password"
                   required
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-amber-400"
+                  className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-colors"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={isAuthLoading}
-                className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold rounded-xl text-sm transition-all shadow-lg flex items-center justify-center gap-2 mt-4"
+                className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold rounded-xl text-sm transition-all shadow-lg flex items-center justify-center gap-2 mt-4 disabled:opacity-50"
               >
                 {isAuthLoading ? (
-                  <span>Authenticating...</span>
+                  <span>Verifying Credentials...</span>
                 ) : (
                   <>
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                     </svg>
-                    <span>Sign In with {selectedDemoRole} Credentials</span>
+                    <span>Authorize & Sign In</span>
                   </>
                 )}
               </button>
@@ -573,182 +699,309 @@ export function AdminDashboard({
       ? "bg-emerald-100 text-emerald-800 border-emerald-300"
       : "bg-amber-100 text-amber-800 border-amber-300";
 
+  const navItems = [
+    {
+      id: "details" as const,
+      label: "Details & CMS",
+      description: "Entity, website & card content",
+      icon: (
+        <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      ),
+    },
+    {
+      id: "employees" as const,
+      label: "Team & Reps",
+      description: "Representative digital cards",
+      count: employees.length,
+      icon: (
+        <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      ),
+    },
+    {
+      id: "qr" as const,
+      label: "QR Studio & Print",
+      description: "Customizer & bulk vector export",
+      icon: (
+        <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+        </svg>
+      ),
+    },
+    {
+      id: "preview" as const,
+      label: "Card Preview",
+      description: "Interactive mobile phone simulation",
+      icon: (
+        <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+          <rect x="5" y="2" width="14" height="20" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01" />
+        </svg>
+      ),
+    },
+    {
+      id: "theme" as const,
+      label: "Theme & Palette",
+      description: "Color tokens & brand typography",
+      icon: (
+        <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4 4 4 0 014-4c.48 0 .936.084 1.36.24L17.5 4.5a2.121 2.121 0 113 3L11.76 16.64c.156.424.24.88.24 1.36a4 4 0 01-4 4z" />
+        </svg>
+      ),
+    },
+    {
+      id: "leads" as const,
+      label: "Wholesale Leads",
+      description: "Institutional credit & KYC orders",
+      count: leads.length,
+      icon: (
+        <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      ),
+    },
+  ];
+
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
-      {/* Top Navbar with Real Session & RBAC Badge */}
-      <header className="h-16 bg-[#09162D] text-white flex items-center justify-between px-6 border-b border-white/10 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-lg tracking-wide text-[#E3B15F]">Aegis-B2B</span>
-            <span className="text-xs bg-white/10 px-2 py-0.5 rounded text-slate-300">Admin CMS</span>
-          </div>
-          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400 border-l border-white/15 pl-4">
-            <span>Tenant: <strong className="text-white">{tenant.name}</strong></span>
-            <span className="text-slate-500">•</span>
-            <span className="font-mono text-[11px] text-slate-400">{tenant.customDomain || `${tenant.slug}.com`}</span>
-          </div>
-        </div>
+    <div className="min-h-screen flex bg-slate-50 text-slate-800 antialiased">
+      {/* Mobile Sidebar Backdrop */}
+      {isMobileSidebarOpen && (
+        <div
+          onClick={() => setIsMobileSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden animate-in fade-in"
+        />
+      )}
 
-        {/* Authenticated User Status & Role Switcher */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2.5 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl">
-            <div className="w-6 h-6 rounded-full bg-amber-500 text-slate-900 font-bold text-xs flex items-center justify-center">
-              {session.fullName.charAt(0)}
+      {/* Collapsible Sidenavbar */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 md:sticky md:top-0 md:h-screen flex flex-col bg-[#07152B] border-r border-[#0E2448] text-white transition-all duration-300 ease-in-out shadow-2xl md:shadow-none ${
+          isMobileSidebarOpen ? "translate-x-0 w-64" : "-translate-x-full md:translate-x-0"
+        } ${isSidebarCollapsed ? "md:w-[76px]" : "md:w-64"}`}
+      >
+        {/* Brand & Collapse Header */}
+        <div className="h-16 flex items-center justify-between px-4 border-b border-[#0E2448] shrink-0">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#C8963E] to-[#E3B15F] flex items-center justify-center font-bold text-[#07152B] text-base shrink-0 shadow-md">
+              A
             </div>
-            <div className="text-left hidden md:block">
-              <div className="text-xs font-semibold text-white leading-tight">{session.fullName}</div>
-              <div className="text-[10px] text-slate-400 font-mono leading-tight">{session.email}</div>
-            </div>
-            <span className={`text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded-full border ${roleBadgeColor}`}>
-              {session.role}
-            </span>
+            {!isSidebarCollapsed && (
+              <div className="truncate">
+                <span className="font-extrabold text-sm tracking-wide text-white block truncate font-display">
+                  {tenant.name}
+                </span>
+                <span className="text-[10px] font-mono text-[#E3B15F] uppercase tracking-wider block">
+                  Enterprise CMS
+                </span>
+              </div>
+            )}
           </div>
-
-          {/* Quick Role Switch dropdown */}
-          <select
-            value={session.role}
-            onChange={(e) => {
-              const matched = DEMO_ACCOUNTS.find((a) => a.role === e.target.value);
-              if (matched) handleLogin(undefined, matched);
-            }}
-            className="text-xs bg-white/10 border border-white/20 text-white rounded-lg px-2 py-1.5 cursor-pointer hover:bg-white/20"
-            title="Switch RBAC Role to test permissions"
-          >
-            <option value={UserRole.BRAND_ADMIN} className="bg-slate-900 text-white">Role: BRAND_ADMIN</option>
-            <option value={UserRole.SUPER_ADMIN} className="bg-slate-900 text-white">Role: SUPER_ADMIN</option>
-            <option value={UserRole.OPS_MANAGER} className="bg-slate-900 text-white">Role: OPS_MANAGER</option>
-            <option value={UserRole.SALES_REP} className="bg-slate-900 text-white">Role: SALES_REP</option>
-          </select>
 
           <button
             type="button"
-            onClick={handleLogout}
-            className="text-xs text-slate-300 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors"
-            title="Sign Out"
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            <svg
+              className={`h-4 w-4 transition-transform duration-200 ${isSidebarCollapsed ? "rotate-180" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
         </div>
-      </header>
 
-      {/* Permission Warning Banner if Sales Rep or Ops Manager */}
-      {!canEditCorporateDetails && (
-        <div className="bg-amber-50 border-b border-amber-200 px-6 py-2 text-xs text-amber-900 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <svg className="h-4 w-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>
-              <strong>RBAC Notice:</strong> Signed in as <strong>{session.role}</strong>. You have read-only access to corporate compliance, registrations, and website content.
-            </span>
+        {/* Navigation Items */}
+        <div className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
+          {navItems.map((item) => {
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setIsMobileSidebarOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all ${
+                  isActive
+                    ? "bg-[#142C54] text-[#E3B15F] font-bold shadow-sm ring-1 ring-[#E3B15F]/30"
+                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                }`}
+                title={isSidebarCollapsed ? item.label : undefined}
+              >
+                <div className={`shrink-0 ${isActive ? "text-[#E3B15F]" : "text-slate-400"}`}>
+                  {item.icon}
+                </div>
+                {!isSidebarCollapsed && (
+                  <div className="flex-1 flex items-center justify-between min-w-0">
+                    <span className="text-xs font-semibold truncate">{item.label}</span>
+                    {item.count !== undefined && (
+                      <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full ${
+                        isActive ? "bg-[#E3B15F] text-[#07152B]" : "bg-white/10 text-slate-300"
+                      }`}>
+                        {item.count}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Sidebar Footer: Authenticated User Profile & Sign Out */}
+        <div className="p-3 border-t border-[#0E2448] bg-[#050F1F] shrink-0">
+          {!isSidebarCollapsed ? (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500 to-amber-600 text-slate-950 font-bold text-xs flex items-center justify-center shrink-0">
+                    {session.fullName.charAt(0)}
+                  </div>
+                  <div className="truncate">
+                    <div className="text-xs font-bold text-white truncate">{session.fullName}</div>
+                    <div className="text-[10px] font-mono text-[#E3B15F] uppercase truncate">{session.role}</div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                  title="Sign Out"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Fast Role Switch for testing */}
+              <select
+                value={session.role}
+                onChange={(e) => {
+                  const matched = DEMO_ACCOUNTS.find((a) => a.role === e.target.value);
+                  if (matched) handleLogin(undefined, matched.email, matched.plainPasswordHint);
+                }}
+                className="w-full text-[11px] bg-white/5 border border-white/10 text-slate-300 rounded-lg px-2 py-1 cursor-pointer hover:bg-white/10"
+                title="Switch RBAC Role to test permissions"
+              >
+                <option value={UserRole.BRAND_ADMIN} className="bg-slate-900 text-white">Role: BRAND_ADMIN</option>
+                <option value={UserRole.SUPER_ADMIN} className="bg-slate-900 text-white">Role: SUPER_ADMIN</option>
+                <option value={UserRole.OPS_MANAGER} className="bg-slate-900 text-white">Role: OPS_MANAGER</option>
+                <option value={UserRole.SALES_REP} className="bg-slate-900 text-white">Role: SALES_REP</option>
+              </select>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2">
+              <div
+                className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500 to-amber-600 text-slate-950 font-bold text-xs flex items-center justify-center shrink-0"
+                title={`${session.fullName} (${session.role})`}
+              >
+                {session.fullName.charAt(0)}
+              </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                title="Sign Out"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+      </aside>
+
+      {/* Main Content Viewport */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Sticky Top Navbar */}
+        <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 shadow-sm">
+          <div className="flex items-center gap-3">
+            {/* Mobile Hamburger Button */}
+            <button
+              type="button"
+              onClick={() => setIsMobileSidebarOpen(true)}
+              className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100"
+              aria-label="Open navigation menu"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+
+            {/* Breadcrumb / Title */}
+            <div>
+              <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                <span>{tenant.name}</span>
+                <span>/</span>
+                <span className="font-semibold text-slate-700 capitalize">{navItems.find((n) => n.id === activeTab)?.label}</span>
+              </div>
+              <h1 className="text-base font-bold text-slate-900 leading-tight">
+                {navItems.find((n) => n.id === activeTab)?.description}
+              </h1>
+            </div>
           </div>
-          <button
-            onClick={() => handleLogin(undefined, DEMO_ACCOUNTS[0])}
-            className="text-amber-800 font-bold underline hover:text-amber-950"
-          >
-            Switch to Brand Admin ↗
-          </button>
-        </div>
-      )}
 
-      {/* Main Tabs Navigation */}
-      <div className="bg-white border-b border-slate-200 px-6 flex gap-6 text-sm font-semibold overflow-x-auto">
-        {/* Tab 1: Details & Content Management Hub */}
-        <button
-          onClick={() => setActiveTab("details")}
-          className={`py-3.5 border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === "details"
-              ? "border-[#09162D] text-[#09162D] font-bold"
-              : "border-transparent text-slate-500 hover:text-slate-800"
-          }`}
-        >
-          <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-          </svg>
-          <span>Details & Content CMS</span>
-        </button>
+          {/* Quick Utility Links */}
+          <div className="flex items-center gap-2">
+            <a
+              href={cardUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+              title="Preview Rep Digital Card"
+            >
+              <span>Rep Card</span>
+              <span className="text-slate-400 font-mono text-[10px]">↗</span>
+            </a>
+            <a
+              href={`https://${tenant.customDomain || `${tenant.slug}.com`}`}
+              target="_blank"
+              rel="noreferrer"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+              title="Visit Live Corporate Website"
+            >
+              <span>Website</span>
+              <span className="text-slate-400 font-mono text-[10px]">↗</span>
+            </a>
+            <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-medium">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Encrypted Session</span>
+            </div>
+          </div>
+        </header>
 
-        {/* Tab 2: Employees */}
-        <button
-          onClick={() => setActiveTab("employees")}
-          className={`py-3.5 border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === "employees"
-              ? "border-[#09162D] text-[#09162D] font-bold"
-              : "border-transparent text-slate-500 hover:text-slate-800"
-          }`}
-        >
-          <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
-          <span>Employees ({employees.length})</span>
-        </button>
+        {/* Permission Warning Banner if Sales Rep or Ops Manager */}
+        {!canEditCorporateDetails && (
+          <div className="bg-amber-50 border-b border-amber-200 px-6 py-2 text-xs text-amber-900 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <svg className="h-4 w-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>
+                <strong>RBAC Notice:</strong> Signed in as <strong>{session.role}</strong>. Read-only corporate access.
+              </span>
+            </div>
+            <button
+              onClick={() => handleLogin(undefined, DEMO_ACCOUNTS[0].email, DEMO_ACCOUNTS[0].plainPasswordHint)}
+              className="text-amber-800 font-bold underline hover:text-amber-950 text-xs"
+            >
+              Switch to Brand Admin ↗
+            </button>
+          </div>
+        )}
 
-        {/* Tab 3: QR Studio */}
-        <button
-          onClick={() => setActiveTab("qr")}
-          className={`py-3.5 border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === "qr"
-              ? "border-[#09162D] text-[#09162D] font-bold"
-              : "border-transparent text-slate-500 hover:text-slate-800"
-          }`}
-        >
-          <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-          </svg>
-          <span>QR Code & Print Studio</span>
-        </button>
-
-        {/* Tab 4: Live Card Preview */}
-        <button
-          onClick={() => setActiveTab("preview")}
-          className={`py-3.5 border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === "preview"
-              ? "border-[#09162D] text-[#09162D] font-bold"
-              : "border-transparent text-slate-500 hover:text-slate-800"
-          }`}
-        >
-          <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-            <rect x="5" y="2" width="14" height="20" rx="2" strokeLinecap="round" strokeLinejoin="round" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01" />
-          </svg>
-          <span>Live Card Preview</span>
-        </button>
-
-        {/* Tab 5: Theming */}
-        <button
-          onClick={() => setActiveTab("theme")}
-          className={`py-3.5 border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === "theme"
-              ? "border-[#09162D] text-[#09162D] font-bold"
-              : "border-transparent text-slate-500 hover:text-slate-800"
-          }`}
-        >
-          <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4 4 4 0 014-4c.48 0 .936.084 1.36.24L17.5 4.5a2.121 2.121 0 113 3L11.76 16.64c.156.424.24.88.24 1.36a4 4 0 01-4 4z" />
-          </svg>
-          <span>Theming & Brand Colors</span>
-        </button>
-
-        {/* Tab 6: Leads */}
-        <button
-          onClick={() => setActiveTab("leads")}
-          className={`py-3.5 border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === "leads"
-              ? "border-[#09162D] text-[#09162D] font-bold"
-              : "border-transparent text-slate-500 hover:text-slate-800"
-          }`}
-        >
-          <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-          <span>Leads & Inquiries ({leads.length})</span>
-        </button>
-      </div>
-
-      {/* Main Content Body */}
-      <div className="flex-1 p-6 max-w-7xl w-full mx-auto">
+        {/* Main Content Body */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
         {/* ========================================================================= */}
         {/* TAB 1: DETAILS & CONTENT CMS (Centralized Entity & Content Hub)          */}
         {/* ========================================================================= */}
@@ -1491,6 +1744,21 @@ export function AdminDashboard({
 
                           <td className="py-3 px-4 text-right">
                             <div className="flex items-center justify-end gap-1.5">
+                              {/* Edit Representative Details */}
+                              {canManageEmployees && (
+                                <button
+                                  type="button"
+                                  onClick={() => openEditEmployee(emp)}
+                                  className="px-2.5 py-1 rounded-lg border border-amber-300 bg-amber-50/60 text-amber-800 hover:bg-amber-100 font-semibold flex items-center gap-1 transition-colors"
+                                  title="Edit representative credentials & card"
+                                >
+                                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                  <span>Edit</span>
+                                </button>
+                              )}
+
                               {/* Select in Studio */}
                               <button
                                 type="button"
@@ -1895,7 +2163,187 @@ export function AdminDashboard({
             )}
           </div>
         )}
-      </div>
+      </main>
+    </div>
+
+
+      {/* Edit Representative Modal */}
+      {isEditOpen && editingEmployee && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-full max-w-xl p-6 sm:p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4 border-b pb-3">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 font-display">Edit Representative Details</h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Update live contact credentials, territory, and digital card settings for <strong className="text-slate-800">{editingEmployee.firstName} {editingEmployee.lastName}</strong>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsEditOpen(false);
+                  setEditingEmployee(null);
+                }}
+                className="text-slate-400 hover:text-slate-700 p-1"
+                aria-label="Close"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditEmployee} className="space-y-3.5 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold block mb-1">First Name *</label>
+                  <input
+                    required
+                    value={editFirstName}
+                    onChange={(e) => setEditFirstName(e.target.value)}
+                    className="w-full p-2.5 border rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1">Last Name *</label>
+                  <input
+                    required
+                    value={editLastName}
+                    onChange={(e) => setEditLastName(e.target.value)}
+                    className="w-full p-2.5 border rounded-xl"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold block mb-1">Designation *</label>
+                  <input
+                    required
+                    value={editDesignation}
+                    onChange={(e) => setEditDesignation(e.target.value)}
+                    className="w-full p-2.5 border rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1">Division / Unit</label>
+                  <input
+                    value={editDivision}
+                    onChange={(e) => setEditDivision(e.target.value)}
+                    className="w-full p-2.5 border rounded-xl"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-semibold block mb-1">Territory / Region *</label>
+                <input
+                  required
+                  value={editTerritory}
+                  onChange={(e) => setEditTerritory(e.target.value)}
+                  className="w-full p-2.5 border rounded-xl"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold block mb-1">Mobile Phone *</label>
+                  <input
+                    required
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    className="w-full p-2.5 border rounded-xl font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1">WhatsApp Phone</label>
+                  <input
+                    value={editWhatsapp}
+                    onChange={(e) => setEditWhatsapp(e.target.value)}
+                    className="w-full p-2.5 border rounded-xl font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold block mb-1">Official Email *</label>
+                  <input
+                    type="email"
+                    required
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    className="w-full p-2.5 border rounded-xl font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1">Office Extension</label>
+                  <input
+                    value={editOfficeExt}
+                    onChange={(e) => setEditOfficeExt(e.target.value)}
+                    className="w-full p-2.5 border rounded-xl font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-semibold block mb-1">LinkedIn Profile URL</label>
+                <input
+                  value={editLinkedin}
+                  onChange={(e) => setEditLinkedin(e.target.value)}
+                  className="w-full p-2.5 border rounded-xl font-mono"
+                  placeholder="https://linkedin.com/in/..."
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold block mb-1">Custom WhatsApp Greeting Template</label>
+                <textarea
+                  rows={2}
+                  value={editCustomWhatsapp}
+                  onChange={(e) => setEditCustomWhatsapp(e.target.value)}
+                  className="w-full p-2.5 border rounded-xl"
+                  placeholder="Hello {name}, I scanned your Aruka Med digital card..."
+                />
+              </div>
+
+              <div className="pt-2 border-t">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editIsActive}
+                    onChange={(e) => setEditIsActive(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="font-semibold text-slate-800">
+                    Card Active ({editIsActive ? "Enabled & accessible via QR" : "Disabled & reroutes to corporate"})
+                  </span>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditOpen(false);
+                    setEditingEmployee(null);
+                  }}
+                  className="px-4 py-2 border rounded-xl text-slate-600 hover:bg-slate-50 font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingEdit}
+                  className="px-5 py-2 bg-[#09162D] hover:bg-[#12284E] text-[#E3B15F] font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isSavingEdit ? "Saving Changes..." : "Save Representative Details"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Onboard Single Employee Modal */}
       {isAddOpen && (
