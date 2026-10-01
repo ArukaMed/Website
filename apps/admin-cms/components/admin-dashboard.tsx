@@ -142,6 +142,7 @@ export function AdminDashboard({
     setIsAuthLoading(true);
     setLoginError(null);
 
+    let data: any = null;
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -152,42 +153,58 @@ export function AdminDashboard({
         }),
       });
 
-      const data = await res.json();
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
+
       if (!res.ok) {
-        setLoginError(data.message || "Invalid credentials. Please verify your authorized access.");
+        setLoginError(data?.message || `Authentication failed (HTTP ${res.status}). Verify your credentials.`);
+        return;
+      }
+
+      if (!data?.session) {
+        setLoginError("Unexpected response received from the authentication service.");
         return;
       }
 
       setSession(data.session);
       setLoginPassword("");
       showToast(`Authenticated as ${data.session.fullName}`);
-
-      // Refresh employees & leads now that session is authenticated
-      try {
-        const empRes = await fetch(`/api/employees?tenant=${tenant.slug}`);
-        if (empRes.ok) {
-          const empData = await empRes.json();
-          if (empData.employees?.length) {
-            setEmployees(empData.employees);
-            if (!selectedEmployeeSlug && empData.employees[0]) {
-              setSelectedEmployeeSlug(empData.employees[0].slug);
-            }
-          }
-        }
-        const leadsRes = await fetch(`/api/leads?tenant=${tenant.slug}`);
-        if (leadsRes.ok) {
-          const leadsData = await leadsRes.json();
-          if (leadsData.leads?.length) {
-            setLeads(leadsData.leads);
-          }
-        }
-      } catch {
-        // Non-blocking background fetch
-      }
-    } catch {
-      setLoginError("Network connection error. Please verify the service is running.");
+    } catch (err: any) {
+      console.error("[Auth] Login error:", err);
+      setLoginError(err?.message || "Network connection error. Please verify the service is running.");
+      return;
     } finally {
       setIsAuthLoading(false);
+    }
+
+    // Refresh employees & leads in background (non-blocking, will not fail auth)
+    try {
+      const [empRes, leadsRes] = await Promise.allSettled([
+        fetch(`/api/employees?tenant=${tenant.slug}`),
+        fetch(`/api/leads?tenant=${tenant.slug}`),
+      ]);
+
+      if (empRes.status === "fulfilled" && empRes.value.ok) {
+        const empData = await empRes.value.json().catch(() => null);
+        if (empData?.employees?.length) {
+          setEmployees(empData.employees);
+          if (!selectedEmployeeSlug && empData.employees[0]) {
+            setSelectedEmployeeSlug(empData.employees[0].slug);
+          }
+        }
+      }
+
+      if (leadsRes.status === "fulfilled" && leadsRes.value.ok) {
+        const leadsData = await leadsRes.value.json().catch(() => null);
+        if (leadsData?.leads?.length) {
+          setLeads(leadsData.leads);
+        }
+      }
+    } catch (fetchErr) {
+      console.warn("[Dashboard] Background data fetch failed:", fetchErr);
     }
   };
 
