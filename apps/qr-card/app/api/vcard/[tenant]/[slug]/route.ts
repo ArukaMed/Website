@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { dataStore } from "@aegis/database";
 
 export const dynamic = "force-dynamic";
 
@@ -45,45 +46,24 @@ const defaultFallbackTenant = {
   },
 };
 
-const defaultFallbackEmployee = {
-  slug: "amit-sharma-4k7q",
-  firstName: "Amit",
-  lastName: "Sharma",
-  designation: "Territory Sales Manager, Institutional and Retail Supply",
-  division: "Sales",
-  territoryRegion: "North Zone",
-  phoneNumber: "+919876543210",
-  whatsappNumber: "+919876543210",
-  email: "amit.sharma@arukamed.com",
-  linkedinUrl: "https://www.linkedin.com/company/arukamed",
-  isActive: true,
-};
-
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ tenant: string; slug: string }> }
 ) {
   const { tenant: tenantSlug, slug: employeeSlug } = await params;
-  let tenant: any = defaultFallbackTenant;
-  let employee: any = defaultFallbackEmployee;
 
-  // If a specific tenant/slug is requested and matches fallback
-  if (tenantSlug && tenantSlug !== "arukamed") {
-    // Return standard fallback branded for requested tenant slug if dynamic
-    tenant = {
-      ...defaultFallbackTenant,
-      slug: tenantSlug,
-    };
+  // Retrieve actual employee and tenant from dataStore
+  const dbTenant = await dataStore.getTenantBySlug(tenantSlug || "arukamed");
+  const dbEmployee = await dataStore.getEmployeeBySlug(tenantSlug || "arukamed", employeeSlug);
+
+  const tenant = dbTenant || defaultFallbackTenant;
+  const employee = dbEmployee;
+
+  if (!employee) {
+    return NextResponse.json({ message: "Employee contact not found" }, { status: 404 });
   }
 
-  if (employeeSlug && !employeeSlug.startsWith("amit-sharma")) {
-    employee = {
-      ...defaultFallbackEmployee,
-      slug: employeeSlug,
-    };
-  }
-
-  const addr = tenant.complianceInfo.warehouseAddress;
+  const addr = tenant.complianceInfo?.warehouseAddress || defaultFallbackTenant.complianceInfo.warehouseAddress;
   const fullName = `${employee.firstName} ${employee.lastName}`.trim();
 
   const lines = [
@@ -96,7 +76,7 @@ export async function GET(
     ),
     foldLine(`TITLE:${escapeVCardValue(employee.designation)}`),
     foldLine(`TEL;TYPE=CELL,VOICE:${employee.phoneNumber}`),
-    foldLine(`TEL;TYPE=WORK,VOICE,WHATSAPP:${employee.whatsappNumber}`),
+    foldLine(`TEL;TYPE=WORK,VOICE,WHATSAPP:${employee.whatsappNumber || employee.phoneNumber}`),
     foldLine(`EMAIL;TYPE=WORK,INTERNET:${employee.email}`),
     foldLine(
       `ADR;TYPE=WORK:;;${escapeVCardValue(addr.line1)};${escapeVCardValue(addr.city)};${escapeVCardValue(
@@ -104,7 +84,7 @@ export async function GET(
       )};${escapeVCardValue(addr.pincode)};${escapeVCardValue(addr.country)}`
     ),
     foldLine(
-      `URL:${tenant.customDomain ? `https://${tenant.customDomain}` : `https://${tenant.slug}.connect-card.com`}`
+      `URL:${tenant.customDomain ? `https://${tenant.customDomain}` : `https://${tenant.slug}.com`}`
     ),
   ];
 
@@ -116,7 +96,7 @@ export async function GET(
     .map((l: any) => `${l.label}: ${l.number}`)
     .join(" | ");
 
-  const combinedNote = `Territory: ${employee.territoryRegion} | GSTIN: ${tenant.complianceInfo.gstin} | ${licenses}`;
+  const combinedNote = `Territory: ${employee.territoryRegion} | GSTIN: ${tenant.complianceInfo?.gstin || ""} | ${licenses}`;
   lines.push(foldLine(`NOTE:${escapeVCardValue(combinedNote)}`));
   lines.push(`REV:${new Date().toISOString()}`);
   lines.push("END:VCARD");

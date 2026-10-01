@@ -36,3 +36,8 @@ pnpm-debug.log*
 # OS Files
 .DS_Store
 *.pem
+
+# Local Database Cache
+.data-store-cache.json
+*.cache.json
+
