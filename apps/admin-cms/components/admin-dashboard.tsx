@@ -346,7 +346,7 @@ export function AdminDashboard({
       ? "http://localhost:3001"
       : `https://${tenantCardHost}`;
   const cardBaseUrl = process.env.NEXT_PUBLIC_CARD_URL || defaultCardBaseUrl;
-  const cardUrl = selectedEmp ? `${cardBaseUrl}/c/${selectedEmp.slug}` : "";
+  const cardUrl = selectedEmp ? `${cardBaseUrl}/${selectedEmp.slug}` : "";
   const printSpecs = getCommercialPrintSpec();
 
   // If user is not authenticated, render Login Screen
@@ -1587,7 +1587,7 @@ export function AdminDashboard({
                 <div className="w-20 h-4 bg-slate-800 rounded-b-xl"></div>
               </div>
               <iframe
-                src={`${cardBaseUrl}/c/${selectedEmployeeSlug}`}
+                src={`${cardBaseUrl}/${selectedEmployeeSlug}`}
                 title="Mobile Preview"
                 className="w-full h-[calc(100%-24px)] border-0"
               />

@@ -20,7 +20,7 @@ export function OverviewTab({
   onOpenHistory,
   onCopyLink,
 }: OverviewTabProps) {
-  const publicCardUrl = `${cardBaseUrl}/c/${employee.slug}`;
+  const publicCardUrl = `${cardBaseUrl}/${employee.slug}`;
 
   // Check compliance completeness
   const isBankDone = Boolean(employee.bankAccount?.accountNumber && employee.bankAccount?.routingCode);

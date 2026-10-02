@@ -16,16 +16,11 @@ function getServiceKey(): string {
   if (process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.SUPABASE_SERVICE_ROLE_KEY.startsWith("sb_secret_")) {
     return process.env.SUPABASE_SERVICE_ROLE_KEY;
   }
-  // If SUPABASE_SECRET_KEY is non-empty, use it
   if (process.env.SUPABASE_SECRET_KEY) {
     return process.env.SUPABASE_SECRET_KEY;
   }
-  // Check candidate keys; if they are legacy JWTs (starting with "eyJ"), Supabase has disabled them
   const candidate = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-  if (candidate && !candidate.startsWith("eyJ")) {
-    return candidate;
-  }
-  return "";
+  return candidate;
 }
 
 function getHeaders(prefer?: string): Record<string, string> {
@@ -405,69 +400,25 @@ function mapEmployeeToDbRow(emp: EmployeeRecord) {
     id: emp.id,
     tenant_id: emp.tenantId,
     slug: emp.slug,
-    employee_code: emp.employeeCode,
     first_name: emp.firstName,
     last_name: emp.lastName,
-    preferred_name: emp.preferredName,
-    pronouns: emp.pronouns,
-    date_of_birth: emp.dateOfBirth,
-    gender: emp.gender,
-    marital_status: emp.maritalStatus,
-    nationality: emp.nationality,
-    avatar_url: emp.avatarUrl,
-    bio: emp.bio,
-    skills: emp.skills,
-    languages: emp.languages,
+    avatar_url: emp.avatarUrl || null,
     designation: emp.designation,
-    department: emp.department,
-    division: emp.division,
+    division: emp.division || emp.department || null,
     territory_region: emp.territoryRegion,
     phone_number: emp.phoneNumber,
-    whatsapp_number: emp.whatsappNumber,
+    whatsapp_number: emp.whatsappNumber || emp.phoneNumber,
     email: emp.email,
-    personal_email: emp.personalEmail,
-    personal_phone: emp.personalPhone,
-    alternate_phone: emp.alternatePhone,
-    office_extension: emp.officeExtension,
-    current_address: emp.currentAddress,
-    permanent_address: emp.permanentAddress,
-    emergency_contacts: emp.emergencyContacts,
-    direct_manager: emp.directManager,
-    employment_type: emp.employmentType,
-    employment_status: emp.employmentStatus,
-    joining_date: emp.joiningDate,
-    confirmation_date: emp.confirmationDate,
-    work_location: emp.workLocation,
-    shift_schedule: emp.shiftSchedule,
-    timezone: emp.timezone,
-    work_from_home_policy: emp.workFromHomePolicy,
-    notice_period_days: emp.noticePeriodDays,
-    band_grade: emp.bandGrade,
-    cost_center: emp.costCenter,
-    pan_number: emp.panNumber,
-    aadhaar_number: emp.aadhaarNumber,
-    provident_fund_uan: emp.providentFundUan,
-    esic_number: emp.esicNumber,
-    tax_regime: emp.taxRegime,
-    statutory_status: emp.statutoryStatus,
-    bank_account: emp.bankAccount,
-    salary_structure: emp.salaryStructure,
-    payroll_freeze_notice: emp.payrollFreezeNotice,
-    education: emp.education,
-    prior_employment: emp.priorEmployment,
-    dependents: emp.dependents,
-    assigned_assets: emp.assignedAssets,
-    documents: emp.documents,
-    revision_history: emp.revisionHistory,
-    linkedin_url: emp.linkedinUrl,
-    custom_whatsapp_template: emp.customWhatsappTemplate,
-    custom_rate_card_url: emp.customRateCardUrl,
-    is_active: emp.isActive,
-    scan_count: emp.scanCount,
-    vcard_downloads: emp.vcardDownloads,
-    whatsapp_clicks: emp.whatsappClicks,
-    created_at: emp.createdAt instanceof Date ? emp.createdAt.toISOString() : new Date().toISOString(),
-    updated_at: emp.updatedAt instanceof Date ? emp.updatedAt.toISOString() : new Date().toISOString(),
+    linkedin_url: emp.linkedinUrl || null,
+    office_extension: emp.officeExtension || null,
+    custom_whatsapp_template: emp.customWhatsappTemplate || null,
+    custom_rate_card_url: emp.customRateCardUrl || null,
+    is_active: emp.isActive ?? true,
+    scan_count: emp.scanCount || 0,
+    vcard_downloads: emp.vcardDownloads || 0,
+    whatsapp_clicks: emp.whatsappClicks || 0,
+    created_at: emp.createdAt instanceof Date ? emp.createdAt.toISOString() : (emp.createdAt || new Date().toISOString()),
+    updated_at: new Date().toISOString(),
   };
 }
 
@@ -731,11 +682,37 @@ class ResilientDataStore {
       const tenantId = tenant ? tenant.id : employee.tenantId;
       const dbRow = mapEmployeeToDbRow({ ...employee, tenantId });
 
-      await fetch(`${SUPABASE_URL}/rest/v1/employees`, {
-        method: "POST",
-        headers: getHeaders("resolution=merge-duplicates"),
-        body: JSON.stringify(dbRow),
-      });
+      // Check if employee already exists in Supabase
+      const checkRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/employees?slug=eq.${encodeURIComponent(employee.slug)}&select=id`,
+        { headers: getHeaders() }
+      );
+      const existing = checkRes.ok ? await checkRes.json() : [];
+
+      if (Array.isArray(existing) && existing.length > 0) {
+        // Direct PATCH to existing employee
+        const patchRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/employees?slug=eq.${encodeURIComponent(employee.slug)}`,
+          {
+            method: "PATCH",
+            headers: getHeaders(),
+            body: JSON.stringify(dbRow),
+          }
+        );
+        if (!patchRes.ok) {
+          console.error("[DataStore] PATCH employee failed:", patchRes.status, await patchRes.text());
+        }
+      } else {
+        // Insert new employee
+        const postRes = await fetch(`${SUPABASE_URL}/rest/v1/employees`, {
+          method: "POST",
+          headers: getHeaders(),
+          body: JSON.stringify(dbRow),
+        });
+        if (!postRes.ok) {
+          console.error("[DataStore] POST employee failed:", postRes.status, await postRes.text());
+        }
+      }
     } catch (err) {
       console.error("[DataStore] Failed to save employee in Supabase:", err);
     }
@@ -797,8 +774,8 @@ class ResilientDataStore {
           type === "scan"
             ? "scan_count"
             : type === "vcard"
-            ? "vcard_downloads"
-            : "whatsapp_clicks";
+              ? "vcard_downloads"
+              : "whatsapp_clicks";
         const patchVal =
           type === "scan" ? e.scanCount : type === "vcard" ? e.vcardDownloads : e.whatsappClicks;
 

@@ -97,7 +97,7 @@ export function PhotoUploadModal({
               <p className="font-semibold text-slate-800">Multi-Channel Instant Synchronization</p>
               <p className="text-[11px] leading-relaxed">
                 Saving this photograph will automatically update the representative&apos;s digital visiting card at{" "}
-                <span className="font-mono text-navy font-semibold">connect.arukamed.com/c/{employee.slug}</span> and all internal operations directories.
+                <span className="font-mono text-navy font-semibold">connect.arukamed.com/{employee.slug}</span> and all internal operations directories.
               </p>
             </div>
           </div>

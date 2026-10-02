@@ -18,7 +18,7 @@ export function JobOrgCards({
   onOpenQRStudio,
   onCopyLink,
 }: JobOrgCardsProps) {
-  const publicCardUrl = `${cardBaseUrl}/c/${employee.slug}`;
+  const publicCardUrl = `${cardBaseUrl}/${employee.slug}`;
 
   return (
     <div className="space-y-6">
@@ -231,7 +231,7 @@ export function JobOrgCards({
               <span className="text-slate-400 block text-[10px] uppercase font-semibold">URL Path & QR Slug</span>
               <div className="flex items-center gap-2 mt-1">
                 <span className="font-mono text-navy font-bold bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 flex-1 truncate">
-                  /c/{employee.slug}
+                  /{employee.slug}
                 </span>
                 <button
                   type="button"

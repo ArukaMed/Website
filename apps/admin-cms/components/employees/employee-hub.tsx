@@ -201,7 +201,7 @@ export function EmployeeHub({
 
   // Copy Link Helper
   const handleCopyPublicLink = (slug: string, name: string) => {
-    const url = `${cardBaseUrl}/c/${slug}`;
+    const url = `${cardBaseUrl}/${slug}`;
     navigator.clipboard.writeText(url);
     showToast(`Copied ${name}'s digital card link: ${url}`);
   };
@@ -411,7 +411,7 @@ export function EmployeeHub({
                               <span className="font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-semibold shrink-0">
                                 {emp.employeeCode || "EMP-10492"}
                               </span>
-                              <span className="font-mono text-slate-400 break-all">/c/{emp.slug}</span>
+                              <span className="font-mono text-slate-400 break-all">/{emp.slug}</span>
                             </div>
                           </div>
                         </div>
@@ -517,7 +517,7 @@ export function EmployeeHub({
                           <span className="font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-semibold shrink-0">
                             {emp.employeeCode || "EMP-10492"}
                           </span>
-                          <span className="font-mono text-slate-400 break-all">/c/{emp.slug}</span>
+                          <span className="font-mono text-slate-400 break-all">/{emp.slug}</span>
                         </div>
                       </div>
                     </div>
