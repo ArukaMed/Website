@@ -34,8 +34,11 @@ export async function POST(req: NextRequest) {
       businessType: sanitizeHtmlText(body.businessType),
       contactName: sanitizeHtmlText(body.contactName),
       phone: body.phone,
+      email: body.email ? sanitizeHtmlText(body.email) : undefined,
       drugLicenceNumber: sanitizeHtmlText(body.drugLicenceNumber || ""),
+      gstin: body.gstin ? sanitizeHtmlText(body.gstin) : undefined,
       requirementCategory: sanitizeHtmlText(body.requirementCategory || "General Wholesale"),
+      estimatedMonthlyVolume: body.estimatedMonthlyVolume ? sanitizeHtmlText(body.estimatedMonthlyVolume) : undefined,
       sourceUrl: req.headers.get("referer") || req.nextUrl.origin,
     });
 
@@ -50,8 +53,11 @@ export async function POST(req: NextRequest) {
       businessType: parsed.data.businessType,
       contactName: parsed.data.contactName,
       phone: parsed.data.phone,
+      email: parsed.data.email || null,
       drugLicenceNumber: parsed.data.drugLicenceNumber || null,
+      gstin: parsed.data.gstin || null,
       requirementCategory: parsed.data.requirementCategory || null,
+      estimatedMonthlyVolume: parsed.data.estimatedMonthlyVolume || null,
       sourceUrl: parsed.data.sourceUrl,
       userAgent: req.headers.get("user-agent") || null,
       ipAddress: req.headers.get("x-forwarded-for") || null,
