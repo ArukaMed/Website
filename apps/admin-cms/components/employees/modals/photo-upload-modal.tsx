@@ -22,6 +22,12 @@ export function PhotoUploadModal({
   const [stagedAvatarUrl, setStagedAvatarUrl] = useState<string | null>(employee.avatarUrl || null);
   const [isSaving, setIsSaving] = useState(false);
 
+  React.useEffect(() => {
+    if (isOpen) {
+      setStagedAvatarUrl(employee.avatarUrl || null);
+    }
+  }, [isOpen, employee.avatarUrl]);
+
   if (!isOpen) return null;
 
   const handleSave = async () => {

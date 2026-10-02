@@ -693,6 +693,20 @@ export function EmployeeHub({
                   <span>{currentEmployee.avatarUrl ? "Change Photo" : "Upload Photo"}</span>
                 </button>
 
+                {currentEmployee.avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setIsPhotoModalOpen(true)}
+                    className="px-3.5 py-2 bg-[#FAF8F5] hover:bg-amber-100/60 border border-[#C8963E]/40 text-[#735118] font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5"
+                    title="Reposition face and adjust zoom in visiting card frame"
+                  >
+                    <svg className="w-4 h-4 text-[#C8963E]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                    </svg>
+                    <span>Adjust Frame</span>
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={() => onOpenQRStudio(currentEmployee.slug)}
