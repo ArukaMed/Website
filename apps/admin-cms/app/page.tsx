@@ -23,12 +23,18 @@ export default async function AdminHomePage() {
   const employees = session ? await dataStore.getAllEmployees(tenant.slug) : [];
   const leads = session ? await dataStore.getAllLeads(tenant.slug) : [];
 
+  // Guarantee plain serializable JSON across RSC boundary
+  const safeTenant = JSON.parse(JSON.stringify(tenant));
+  const safeEmployees = JSON.parse(JSON.stringify(employees));
+  const safeLeads = JSON.parse(JSON.stringify(leads));
+  const safeSession = session ? JSON.parse(JSON.stringify(session)) : null;
+
   return (
     <AdminDashboard
-      initialTenant={tenant as any}
-      initialEmployees={employees as any}
-      initialLeads={leads as any}
-      initialSession={session}
+      initialTenant={safeTenant}
+      initialEmployees={safeEmployees}
+      initialLeads={safeLeads}
+      initialSession={safeSession}
     />
   );
 }
