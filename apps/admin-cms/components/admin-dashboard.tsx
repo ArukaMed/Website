@@ -5,6 +5,7 @@ import type { Tenant, Employee, TenantThemeConfig, UserSession, UserRoleType } f
 import { UserRole } from "@aegis/types";
 import { getCommercialPrintSpec } from "@/lib/qr-engine";
 import { EmployeeHub } from "./employees/employee-hub";
+import { QrStudio } from "./qr/qr-studio";
 
 interface AdminDashboardProps {
   initialTenant: Tenant;
@@ -1458,106 +1459,14 @@ export function AdminDashboard({
         {/* TAB 3: QR STUDIO & INDUSTRIAL PRINT SPEC                                   */}
         {/* ========================================================================= */}
         {activeTab === "qr" && (
-          <div className="grid lg:grid-cols-2 gap-8">
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-900 mb-2 font-display">
-                Vector & Print-Ready QR Studio
-              </h3>
-              <p className="text-xs text-slate-500 mb-6">
-                Dual-output QR generator emitting screen vectors and commercial 300+ DPI CMYK print standards for card manufacturing.
-              </p>
-
-              <div className="mb-4">
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Active Employee Card
-                </label>
-                <select
-                  value={selectedEmployeeSlug}
-                  onChange={(e) => setSelectedEmployeeSlug(e.target.value)}
-                  className="w-full p-2.5 text-sm border border-slate-300 rounded-xl"
-                >
-                  {employees.map((e) => (
-                    <option key={e.id} value={e.slug}>
-                      {e.firstName} {e.lastName} ({e.designation} - {e.territoryRegion})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 mb-6 text-center">
-                <div className="mx-auto w-48 h-48 bg-white p-3 rounded-xl border border-slate-300 shadow-inner flex flex-col items-center justify-center">
-                  <div className="text-[10px] font-mono text-slate-400 mb-1">Error Correction: H (30%)</div>
-                  <div className="my-2 p-3 rounded-lg bg-slate-100 text-slate-800">
-                    <svg className="h-10 w-10 text-[#09162D]" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                    </svg>
-                  </div>
-                  <div className="text-[10px] font-mono break-all text-slate-500 px-2">{cardUrl}</div>
-                </div>
-
-                <div className="mt-4 flex items-center justify-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => showToast("Vector SVG generated with central brand cutout.")}
-                    className="bg-[#09162D] hover:bg-[#12284E] text-white text-xs font-bold px-4 py-2 rounded-xl transition-all"
-                  >
-                    Download Vector SVG
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => showToast("High-Res 300 DPI PNG downloaded for offset printing.")}
-                    className="bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold px-4 py-2 rounded-xl transition-all"
-                  >
-                    Download 300 DPI PNG
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Print Spec Card */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-900 mb-2 font-display">Commercial Print Specifications</h3>
-              <p className="text-xs text-slate-500 mb-4">
-                Exact CMYK color channels and die-cut margins formatted for industrial business card presses.
-              </p>
-
-              <dl className="divide-y divide-slate-100 text-xs">
-                <div className="py-2.5 flex justify-between">
-                  <dt className="text-slate-500">Trim Dimensions</dt>
-                  <dd className="font-semibold text-slate-900">{printSpecs.dimensionsInches}</dd>
-                </div>
-                <div className="py-2.5 flex justify-between">
-                  <dt className="text-slate-500">PostScript Points</dt>
-                  <dd className="font-mono text-slate-900">{printSpecs.dimensionsPoints}</dd>
-                </div>
-                <div className="py-2.5 flex justify-between">
-                  <dt className="text-slate-500">Bleed Margins</dt>
-                  <dd className="font-semibold text-slate-900">{printSpecs.bleedInches}</dd>
-                </div>
-                <div className="py-2.5 flex justify-between">
-                  <dt className="text-slate-500">Target Output Resolution</dt>
-                  <dd className="font-semibold text-slate-900">{printSpecs.resolutionDpi} DPI</dd>
-                </div>
-                <div className="py-2.5 flex justify-between">
-                  <dt className="text-slate-500">CMYK Primary Channel</dt>
-                  <dd className="font-mono text-slate-900">{printSpecs.cmykColorCodes.primaryDeep}</dd>
-                </div>
-                <div className="py-2.5 flex justify-between">
-                  <dt className="text-slate-500">CMYK Accent Channel</dt>
-                  <dd className="font-mono text-slate-900">{printSpecs.cmykColorCodes.accentGold}</dd>
-                </div>
-              </dl>
-
-              <div className="mt-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
-                <svg className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <span>
-                  <strong>Offset Press Certified:</strong> Packages include vector cutting paths, safe title margins (0.125"), and embedded Pantone color bridges for spot-UV and gold-foil stamping.
-                </span>
-              </div>
-            </div>
-          </div>
+          <QrStudio
+            employees={employees}
+            tenant={tenant}
+            selectedEmployeeSlug={selectedEmployeeSlug}
+            onSelectEmployeeSlug={setSelectedEmployeeSlug}
+            cardBaseUrl={cardBaseUrl}
+            showToast={showToast}
+          />
         )}
 
         {/* ========================================================================= */}
