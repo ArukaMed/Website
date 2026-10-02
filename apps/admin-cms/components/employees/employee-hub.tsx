@@ -12,6 +12,7 @@ import { AssetsCard } from "./cards/assets-card";
 import { CardEditModal } from "./modals/card-edit-modal";
 import { SteppedEnrollmentWizard } from "./modals/stepped-enrollment-wizard";
 import { RevisionHistoryDrawer } from "./drawers/revision-history-drawer";
+import { PhotoUploadModal } from "./modals/photo-upload-modal";
 
 interface EmployeeHubProps {
   employees: Employee[];
@@ -52,6 +53,7 @@ export function EmployeeHub({
   // Modals & Drawers
   const [isEnrollWizardOpen, setIsEnrollWizardOpen] = useState(false);
   const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [activeEditCard, setActiveEditCard] = useState<EditCardType>(null);
 
   // Selected Employee Record
@@ -130,6 +132,34 @@ export function EmployeeHub({
             field: "Employment Active Status",
             oldValue: emp.isActive ? "Active" : "Deactivated",
             newValue: nextState ? "Active" : "Deactivated",
+            status: "Approved",
+          },
+        }),
+      });
+    } catch {
+      // Local state is already updated
+    }
+  };
+
+  // Update Photograph (Cloudinary)
+  const handleSaveAvatar = async (employeeSlug: string, newAvatarUrl: string | null) => {
+    setEmployees((prev) =>
+      prev.map((e) => (e.slug === employeeSlug ? { ...e, avatarUrl: newAvatarUrl } : e))
+    );
+
+    try {
+      await fetch("/api/employees", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantSlug,
+          employeeSlug,
+          patch: { avatarUrl: newAvatarUrl },
+          auditEntry: {
+            category: "Identity",
+            field: "Profile Photograph (Cloudinary)",
+            oldValue: currentEmployee?.avatarUrl ? "Photograph Attached" : "None",
+            newValue: newAvatarUrl ? "Cloudinary CDN Attached" : "Removed",
             status: "Approved",
           },
         }),
@@ -545,16 +575,30 @@ export function EmployeeHub({
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               {/* Identity Snapshot */}
               <div className="flex items-start sm:items-center gap-4 sm:gap-5">
-                {/* Avatar with initials fallback */}
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#09162D] text-[#E3B15F] flex items-center justify-center font-bold text-xl sm:text-2xl shadow-md overflow-hidden shrink-0">
-                  {currentEmployee.avatarUrl ? (
-                    <img src={currentEmployee.avatarUrl} alt={currentEmployee.firstName} className="w-full h-full object-cover" />
-                  ) : (
-                    <span>
-                      {currentEmployee.firstName[0]}
-                      {currentEmployee.lastName[0]}
-                    </span>
-                  )}
+                {/* Interactive Avatar with initials fallback and hover camera icon */}
+                <div
+                  onClick={() => setIsPhotoModalOpen(true)}
+                  className="relative group cursor-pointer"
+                  title="Click to update employee photograph"
+                >
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#09162D] text-[#E3B15F] flex items-center justify-center font-bold text-xl sm:text-2xl shadow-md overflow-hidden shrink-0 border-2 border-slate-200 group-hover:border-[#C8963E] transition-all">
+                    {currentEmployee.avatarUrl ? (
+                      <img src={currentEmployee.avatarUrl} alt={currentEmployee.firstName} className="w-full h-full object-cover" />
+                    ) : (
+                      <span>
+                        {currentEmployee.firstName[0]}
+                        {currentEmployee.lastName[0]}
+                      </span>
+                    )}
+                  </div>
+                  {/* Hover Camera Overlay */}
+                  <div className="absolute inset-0 bg-[#09162D]/75 rounded-2xl opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white transition-opacity">
+                    <svg className="w-5 h-5 text-[#E3B15F]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span className="text-[9px] font-bold mt-0.5 text-slate-200">Change</span>
+                  </div>
                 </div>
 
                 <div className="space-y-1">
@@ -596,6 +640,18 @@ export function EmployeeHub({
 
               {/* Header Action Buttons */}
               <div className="flex flex-wrap items-center gap-2 self-start lg:self-auto border-t lg:border-t-0 pt-4 lg:pt-0 border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsPhotoModalOpen(true)}
+                  className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5"
+                >
+                  <svg className="w-4 h-4 text-[#C8963E]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span>{currentEmployee.avatarUrl ? "Change Photo" : "Upload Photo"}</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => onOpenQRStudio(currentEmployee.slug)}
@@ -790,6 +846,17 @@ export function EmployeeHub({
           isOpen={isHistoryDrawerOpen}
           onClose={() => setIsHistoryDrawerOpen(false)}
           employee={currentEmployee}
+        />
+      )}
+
+      {/* Cloudinary Photograph Uploader Modal */}
+      {currentEmployee && (
+        <PhotoUploadModal
+          isOpen={isPhotoModalOpen}
+          onClose={() => setIsPhotoModalOpen(false)}
+          employee={currentEmployee}
+          onSaveAvatar={handleSaveAvatar}
+          showToast={showToast}
         />
       )}
     </div>

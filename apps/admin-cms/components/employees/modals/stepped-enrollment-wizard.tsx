@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import type { Employee, UserSession } from "@aegis/types";
+import { AvatarUploader } from "../ui/avatar-uploader";
 
 interface SteppedEnrollmentWizardProps {
   isOpen: boolean;
@@ -43,6 +44,7 @@ export function SteppedEnrollmentWizard({
   const [maritalStatus, setMaritalStatus] = useState("Single");
   const [nationality, setNationality] = useState("Indian");
   const [bio, setBio] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   // Step 2: Contact & Address
   const [personalPhone, setPersonalPhone] = useState("+91 98");
@@ -169,6 +171,7 @@ export function SteppedEnrollmentWizard({
       gender,
       maritalStatus,
       nationality,
+      avatarUrl: avatarUrl || null,
       bio: bio.trim() || `Operations and distribution specialist for Aruka Med, supporting ${territoryRegion}.`,
 
       phoneNumber: personalPhone.trim(),
@@ -350,6 +353,18 @@ export function SteppedEnrollmentWizard({
           {/* STEP 1: PRIMARY IDENTITY */}
           {currentStep === 1 && (
             <div className="space-y-4 text-xs">
+              {/* Photograph Uploader */}
+              <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl">
+                <span className="font-semibold block mb-2 text-slate-800 text-xs">Official Employee Photograph (Cloudinary CDN)</span>
+                <AvatarUploader
+                  currentAvatarUrl={avatarUrl}
+                  employeeName={`${firstName} ${lastName}`.trim() || "New Employee"}
+                  onUploadSuccess={(url) => setAvatarUrl(url)}
+                  onRemove={() => setAvatarUrl(null)}
+                  compact={true}
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="font-semibold block mb-1">Legal First Name *</label>

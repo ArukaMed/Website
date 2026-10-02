@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import type { Employee, UserSession } from "@aegis/types";
 import type { EditCardType } from "../types";
+import { AvatarUploader } from "../ui/avatar-uploader";
 
 interface CardEditModalProps {
   cardType: EditCardType;
@@ -36,6 +37,7 @@ export function CardEditModal({
   const [nationality, setNationality] = useState(employee.nationality || "Indian");
   const [bio, setBio] = useState(employee.bio || "");
   const [skillsText, setSkillsText] = useState((employee.skills || []).join(", "));
+  const [avatarUrl, setAvatarUrl] = useState(employee.avatarUrl || null);
 
   // Contact Form State
   const [phoneNumber, setPhoneNumber] = useState(employee.phoneNumber || "");
@@ -141,6 +143,7 @@ export function CardEditModal({
         nationality,
         bio,
         skills,
+        avatarUrl,
       };
       auditEntry = {
         category: "Identity",
@@ -365,6 +368,17 @@ export function CardEditModal({
           {/* IDENTITY FORM */}
           {cardType === "identity" && (
             <>
+              <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl">
+                <span className="font-semibold block mb-2 text-slate-800">Profile Photograph (Cloudinary CDN)</span>
+                <AvatarUploader
+                  currentAvatarUrl={avatarUrl}
+                  employeeName={`${firstName} ${lastName}`.trim() || employee.firstName}
+                  onUploadSuccess={(url) => setAvatarUrl(url)}
+                  onRemove={() => setAvatarUrl(null)}
+                  compact={true}
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="font-semibold block mb-1">Legal First Name *</label>
