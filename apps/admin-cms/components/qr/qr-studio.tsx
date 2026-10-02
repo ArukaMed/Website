@@ -144,7 +144,7 @@ export function QrStudio({
     const src =
       logoSource === "avatar" && currentEmployee?.avatarUrl
         ? currentEmployee.avatarUrl
-        : "/assets/logos/askew_line_logo.png";
+        : "/assets/logos/logo.png";
 
     img.onload = () => {
       logoImageRef.current = img;
@@ -204,7 +204,14 @@ export function QrStudio({
 
   useEffect(() => {
     redrawCanvas();
-  }, [redrawCanvas]);
+  }, [redrawCanvas, previewTab]);
+
+  const handleSelectTab = (tab: "qr-only" | "card-template" | "print-spec") => {
+    setPreviewTab(tab);
+    requestAnimationFrame(() => {
+      redrawCanvas();
+    });
+  };
 
   // Download High-Res Transparent PNG (300 DPI - 2400x2400)
   const handleDownloadPng = async () => {
@@ -308,53 +315,9 @@ export function QrStudio({
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header Banner */}
-      <div className="bg-[#09162D] rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden shadow-lg border border-[#C8963E]/30">
-        <div className="absolute -top-12 -right-12 w-64 h-64 bg-[#E3B15F]/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-2 max-w-2xl">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#E3B15F]">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Production QR Studio & Template Engine</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold font-display">
-              Enterprise QR Generator & Visiting Card
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Generate transparent PNGs and vector SVGs ready for Adobe Illustrator, Figma, or packaging boxes. Seamlessly preview on the official ArukaMed visiting card template.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={handleDownloadPng}
-              className="px-4 py-2.5 bg-[#C8963E] hover:bg-[#b5832f] text-[#09162D] font-bold text-xs rounded-xl shadow-md flex items-center gap-2 transition-all active:scale-[0.98]"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              <span>Download 300 DPI PNG {transparentBg ? "(Transparent)" : ""}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleDownloadSvg}
-              className="px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2"
-            >
-              <svg className="w-4 h-4 text-[#E3B15F]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-              </svg>
-              <span>Vector SVG</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
+    <div className="space-y-6">
       {/* Main Studio Grid */}
-      <div className="grid lg:grid-cols-12 gap-8 items-start">
+      <div className="grid lg:grid-cols-12 gap-6 lg:gap-8 items-start">
         {/* LEFT COLUMN: Clean Editing Tools (7 cols) */}
         <div className="lg:col-span-7 space-y-6">
           {/* SECTION 1: QR MODE SWITCHER */}
@@ -367,7 +330,7 @@ export function QrStudio({
               <span className="text-[11px] font-mono text-slate-400">Zero Redundancy</span>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Option A: Simple QR */}
               <button
                 type="button"
@@ -745,42 +708,42 @@ export function QrStudio({
           <div className="flex items-center bg-white p-1 rounded-2xl border border-slate-200 shadow-sm text-xs font-bold">
             <button
               type="button"
-              onClick={() => setPreviewTab("qr-only")}
+              onClick={() => handleSelectTab("qr-only")}
               className={`flex-1 py-2 rounded-xl transition-all ${
                 previewTab === "qr-only"
                   ? "bg-[#09162D] text-white shadow-sm"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              Live QR Preview
+              Preview
             </button>
             <button
               type="button"
-              onClick={() => setPreviewTab("card-template")}
+              onClick={() => handleSelectTab("card-template")}
               className={`flex-1 py-2 rounded-xl transition-all ${
                 previewTab === "card-template"
                   ? "bg-[#09162D] text-white shadow-sm"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              Visiting Card Front (Official)
+              Card Front
             </button>
             <button
               type="button"
-              onClick={() => setPreviewTab("print-spec")}
+              onClick={() => handleSelectTab("print-spec")}
               className={`flex-1 py-2 rounded-xl transition-all ${
                 previewTab === "print-spec"
                   ? "bg-[#09162D] text-white shadow-sm"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              Print Spec
+              Print Specs
             </button>
           </div>
 
-          {/* TAB 1: SCANNABLE QR CANVAS (With Transparent Checkerboard) */}
-          {previewTab === "qr-only" && (
-            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm text-center space-y-5">
+          {/* TAB 1: SCANNABLE QR CANVAS (Always mounted to prevent vanishing) */}
+          <div className={previewTab === "qr-only" ? "space-y-5" : "hidden"}>
+            <div className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200 shadow-sm text-center space-y-5">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -793,7 +756,7 @@ export function QrStudio({
 
               {/* The Interactive Canvas with Checkerboard for Transparency */}
               <div
-                className="mx-auto w-64 h-64 sm:w-72 sm:h-72 p-4 rounded-3xl border-2 border-slate-200 shadow-inner flex items-center justify-center relative overflow-hidden group"
+                className="mx-auto w-56 h-56 sm:w-72 sm:h-72 p-4 rounded-3xl border-2 border-slate-200 shadow-inner flex items-center justify-center relative overflow-hidden group"
                 style={{
                   background: transparentBg
                     ? "repeating-conic-gradient(#f1f5f9 0% 25%, #ffffff 0% 50%) 50% / 16px 16px"
@@ -818,24 +781,24 @@ export function QrStudio({
               </div>
 
               {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={handleDownloadPng}
-                  className="px-3.5 py-2.5 bg-[#09162D] hover:bg-[#122442] text-white text-xs font-bold rounded-xl shadow-sm flex items-center justify-center gap-1.5 transition-colors"
+                  className="px-4 py-2.5 bg-[#C8963E] hover:bg-[#b5832f] text-[#09162D] font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                 >
-                  <svg className="w-3.5 h-3.5 text-[#E3B15F]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
-                  <span>Download PNG</span>
+                  <span>Download 300 DPI PNG {transparentBg ? "(Transparent)" : ""}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleDownloadSvg}
-                  className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                  className="px-4 py-2.5 bg-[#09162D] hover:bg-[#122442] text-white font-bold text-xs rounded-xl shadow-sm flex items-center justify-center gap-2 transition-colors"
                 >
-                  <svg className="w-3.5 h-3.5 text-[#C8963E]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-[#E3B15F]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                   </svg>
                   <span>Vector SVG</span>
@@ -844,7 +807,7 @@ export function QrStudio({
                 <button
                   type="button"
                   onClick={handleCopyPng}
-                  className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl col-span-2 flex items-center justify-center gap-1.5 transition-colors"
+                  className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl col-span-1 sm:col-span-2 flex items-center justify-center gap-1.5 transition-colors"
                 >
                   <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
@@ -853,106 +816,86 @@ export function QrStudio({
                 </button>
               </div>
             </div>
-          )}
+          </div>
 
           {/* TAB 2: OFFICIAL VISITING CARD TEMPLATE (Clean 3.5" x 2.0" Front Template) */}
-          {previewTab === "card-template" && (
-            <div className="space-y-4">
-              {/* Card Container formatted to 3.5" x 2.0" aspect ratio */}
-              <div className="bg-[#FAF9F6] rounded-2xl p-5 border border-slate-300 shadow-xl relative overflow-hidden aspect-[3.5/2.0] flex flex-col justify-between select-none">
-                {/* Decorative Bottom-Left Navy Accent Curve */}
-                <div
-                  className="absolute bottom-0 left-0 w-28 h-20 bg-[#09162D] rounded-tr-[40px] pointer-events-none"
-                  style={{
-                    clipPath: "polygon(0 0, 100% 100%, 0 100%)",
-                  }}
+          <div className={previewTab === "card-template" ? "space-y-4" : "hidden"}>
+            <div className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Official Business Card Front</span>
+                </span>
+                <span className="text-[10px] font-mono text-[#C8963E] bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                  3.5" × 2.0" Official
+                </span>
+              </div>
+
+              {/* Card Container formatted to 3.5" x 2.0" (252 x 144) aspect ratio */}
+              <div className="w-full max-w-[420px] aspect-[252/144] relative rounded-2xl overflow-hidden shadow-xl border border-slate-300 mx-auto select-none bg-[#FAF9F6]">
+                {/* Clean Official SVG Template Background */}
+                <img
+                  src="/assets/templates/visting_card_front.svg"
+                  alt="ArukaMed Visiting Card Template"
+                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
                 />
 
-                {/* Decorative Gold Line Border */}
-                <div className="absolute inset-2 border border-[#C8963E]/40 rounded-xl pointer-events-none" />
+                {/* Overlaid Rep Contact Details (Left Column) */}
+                <div className="absolute left-[6.5%] top-[34%] max-w-[54%] z-10 space-y-1">
+                  <div>
+                    <h4 className="font-extrabold text-[#09162D] uppercase leading-tight font-display tracking-tight text-[11px] sm:text-[13px] truncate">
+                      {currentEmployee ? `${currentEmployee.firstName} ${currentEmployee.lastName}` : "Abhishikt Emmanuel Prakash"}
+                    </h4>
+                    <div className="text-[7.5px] sm:text-[9px] font-bold text-[#C8963E] uppercase tracking-wider mt-0.5 truncate">
+                      {currentEmployee?.designation || "GENERAL MANAGER"}
+                    </div>
+                  </div>
 
-                {/* Background Watermark Pattern on Right Side */}
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 w-44 h-44 opacity-[0.07] pointer-events-none">
-                  <img src="/assets/logos/askew_line_logo.png" alt="" className="w-full h-full object-contain" />
-                </div>
-
-                {/* Top Section: Official Aruka Logo */}
-                <div className="relative z-10 flex items-start justify-between">
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-1.5">
-                      {/* Logo Infinity Icon */}
-                      <div className="w-6 h-6">
-                        <img src="/assets/logos/askew_line_logo.png" alt="" className="w-full h-full object-contain" />
-                      </div>
-                      <span className="font-extrabold text-base tracking-tight text-[#09162D] font-display">
-                        Aruka<span className="text-[#C8963E]">Med</span>
+                  <div className="space-y-0.5 pt-0.5 text-[7px] sm:text-[8px] text-[#09162D] font-medium leading-tight">
+                    <div className="flex items-center gap-1">
+                      <span className="w-3 h-3 rounded-full border border-[#09162D]/30 flex items-center justify-center text-[6px] shrink-0">
+                        📞
                       </span>
+                      <span className="truncate">{currentEmployee?.phoneNumber || "+91 9742626628"}</span>
                     </div>
-                    <div className="text-[7.5px] uppercase tracking-wider text-slate-500 font-medium">
-                      PARTNERING IN HEALTH, DELIVERING TRUST.
+
+                    <div className="flex items-center gap-1">
+                      <span className="w-3 h-3 rounded-full border border-[#09162D]/30 flex items-center justify-center text-[6px] shrink-0">
+                        ✉️
+                      </span>
+                      <span className="truncate">{currentEmployee?.email || "hello@arukamed.com"}</span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <span className="w-3 h-3 rounded-full border border-[#09162D]/30 flex items-center justify-center text-[6px] shrink-0">
+                        📍
+                      </span>
+                      <span className="truncate">{currentEmployee?.workLocation || "Anand Nagar, Kanpur - 208019"}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Middle & Bottom Section: Rep Details + Live QR Code */}
-                <div className="relative z-10 flex items-end justify-between gap-4 mt-2">
-                  {/* Left Side: Rep Contact Details */}
-                  <div className="space-y-2 max-w-[60%]">
-                    <div>
-                      <h4 className="font-extrabold text-sm text-[#09162D] uppercase leading-tight font-display tracking-tight">
-                        {currentEmployee ? `${currentEmployee.firstName} ${currentEmployee.lastName}` : "Abhishikt Emmanuel Prakash"}
-                      </h4>
-                      <div className="text-[8.5px] font-bold text-[#C8963E] uppercase tracking-wider mt-0.5">
-                        {currentEmployee?.designation || "GENERAL MANAGER"}
-                      </div>
-                    </div>
-
-                    <div className="space-y-1 text-[8px] text-[#09162D] font-medium">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-3.5 h-3.5 rounded-full border border-[#09162D]/40 flex items-center justify-center text-[7px]">
-                          📞
-                        </span>
-                        <span>{currentEmployee?.phoneNumber || "+91 9742626628"}</span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-3.5 h-3.5 rounded-full border border-[#09162D]/40 flex items-center justify-center text-[7px]">
-                          ✉️
-                        </span>
-                        <span className="truncate">{currentEmployee?.email || "hello@arukamed.com"}</span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-3.5 h-3.5 rounded-full border border-[#09162D]/40 flex items-center justify-center text-[7px]">
-                          📍
-                        </span>
-                        <span className="truncate">{currentEmployee?.workLocation || "Anand Nagar, Kanpur - 208019"}</span>
-                      </div>
-                    </div>
+                {/* Overlaid QR Code (Right Column, inside watermark loop area) */}
+                <div className="absolute right-[6%] top-1/2 -translate-y-1/2 z-10 flex flex-col items-center">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 p-1 sm:p-1.5 bg-white/95 backdrop-blur-sm rounded-xl border border-[#C8963E]/50 shadow-sm flex items-center justify-center">
+                    <canvas
+                      ref={cardCanvasRef}
+                      className="w-full h-full object-contain"
+                    />
                   </div>
-
-                  {/* Right Side: QR Code Slot with Subtle Transparent Backdrop */}
-                  <div className="flex flex-col items-center shrink-0">
-                    <div className="w-20 h-20 p-1.5 bg-white/90 backdrop-blur-sm rounded-xl border border-[#C8963E]/50 shadow-sm flex items-center justify-center">
-                      <canvas
-                        ref={cardCanvasRef}
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
-                    <span className="text-[7px] font-bold text-[#09162D] uppercase tracking-wider mt-1 font-mono">
-                      SCAN TO CONNECT
-                    </span>
-                  </div>
+                  <span className="text-[6px] sm:text-[7px] font-bold text-[#09162D] uppercase tracking-wider mt-1 font-mono">
+                    SCAN TO CONNECT
+                  </span>
                 </div>
               </div>
 
               {/* Template Action Controls */}
-              <div className="flex items-center justify-between text-xs text-slate-500 px-1">
-                <span>Standard Business Card Size: 3.5" x 2.0" (88.9 × 50.8 mm)</span>
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 pt-2 border-t border-slate-100">
+                <span className="text-[11px] text-center sm:text-left">Standard Business Card Size: 3.5" × 2.0" (88.9 × 50.8 mm)</span>
                 <button
                   type="button"
                   onClick={handlePrintCard}
-                  className="px-4 py-2 bg-[#09162D] hover:bg-[#122442] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition-colors"
+                  className="w-full sm:w-auto px-4 py-2 bg-[#09162D] hover:bg-[#122442] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-colors"
                 >
                   <svg className="w-4 h-4 text-[#E3B15F]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -961,10 +904,10 @@ export function QrStudio({
                 </button>
               </div>
             </div>
-          )}
+          </div>
 
           {/* TAB 3: INDUSTRIAL 300 DPI SPEC */}
-          {previewTab === "print-spec" && (
+          <div className={previewTab === "print-spec" ? "block" : "hidden"}>
             <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
               <h4 className="font-bold text-slate-900 text-sm font-display">
                 Industrial Offset Print Standards
@@ -1000,7 +943,7 @@ export function QrStudio({
                 </div>
               </dl>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
