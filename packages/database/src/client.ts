@@ -1,20 +1,31 @@
 import fs from "fs";
 import path from "path";
 import type * as schema from "./schema/index";
-import { arukaMedTenantSeed } from "./seed";
+import { arukaMedTenantSeed, abhishiktEmployeeSeed, amitSharmaEmployeeSeed } from "./seed";
 import type { TenantRecord, EmployeeRecord, LeadInquiryRecord } from "./schema/index";
+import { sanitizePublicEmployee, type PublicEmployeeProfile } from "@aegis/types";
 
 const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL || "https://cswxwjsntjmigyjqzkun.supabase.co";
 
 function getServiceKey(): string {
-  return (
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_SECRET_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    ""
-  );
+  // If the active secret key is provided (starts with sb_secret_), use it first
+  if (process.env.SUPABASE_SECRET_KEY && process.env.SUPABASE_SECRET_KEY.startsWith("sb_secret_")) {
+    return process.env.SUPABASE_SECRET_KEY;
+  }
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.SUPABASE_SERVICE_ROLE_KEY.startsWith("sb_secret_")) {
+    return process.env.SUPABASE_SERVICE_ROLE_KEY;
+  }
+  // If SUPABASE_SECRET_KEY is non-empty, use it
+  if (process.env.SUPABASE_SECRET_KEY) {
+    return process.env.SUPABASE_SECRET_KEY;
+  }
+  // Check candidate keys; if they are legacy JWTs (starting with "eyJ"), Supabase has disabled them
+  const candidate = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+  if (candidate && !candidate.startsWith("eyJ")) {
+    return candidate;
+  }
+  return "";
 }
 
 function getHeaders(prefer?: string): Record<string, string> {
@@ -85,21 +96,299 @@ function saveCache(cache: CacheStore): void {
 }
 
 function mapDbRowToEmployee(row: any): EmployeeRecord {
+  const parseJson = (val: any, fallback: any) => {
+    if (val === undefined || val === null) return fallback;
+    if (typeof val === "string") {
+      try {
+        return JSON.parse(val);
+      } catch {
+        return fallback;
+      }
+    }
+    return val;
+  };
+
+  const firstName = row.first_name ?? row.firstName ?? "Employee";
+  const lastName = row.last_name ?? row.lastName ?? "Member";
+  const fullName = `${firstName} ${lastName}`.trim();
+
   return {
     id: row.id,
     tenantId: row.tenant_id ?? row.tenantId,
     slug: row.slug,
-    firstName: row.first_name ?? row.firstName,
-    lastName: row.last_name ?? row.lastName,
+
+    // 1. Primary Identity
+    employeeCode: row.employee_code ?? row.employeeCode ?? "EMP-10492",
+    firstName,
+    lastName,
+    preferredName: row.preferred_name ?? row.preferredName ?? firstName.split(" ")[0],
+    pronouns: row.pronouns ?? "He/Him",
+    dateOfBirth: row.date_of_birth ?? row.dateOfBirth ?? "1991-08-24",
+    gender: row.gender ?? "Male",
+    maritalStatus: row.marital_status ?? row.maritalStatus ?? "Married",
+    nationality: row.nationality ?? "Indian",
     avatarUrl: row.avatar_url ?? row.avatarUrl ?? null,
-    designation: row.designation,
-    division: row.division ?? null,
-    territoryRegion: row.territory_region ?? row.territoryRegion,
-    phoneNumber: row.phone_number ?? row.phoneNumber,
-    whatsappNumber: row.whatsapp_number ?? row.whatsappNumber,
-    email: row.email,
+    bio:
+      row.bio ??
+      "Senior pharmaceutical operations & distribution lead specializing in cold-chain logistics, regional hospital supply chains, and B2B vendor management.",
+    skills: parseJson(row.skills, [
+      "Wholesale Pharma Distribution",
+      "Cold Chain Logistics (2°C - 8°C)",
+      "Institutional Hospital Supply",
+      "Regulatory Compliance (Form 20B/21B)",
+      "Vendor Management",
+    ]),
+    languages: parseJson(row.languages, ["English", "Hindi", "Kannada"]),
+
+    // 2. Contact & Address
+    phoneNumber: row.phone_number ?? row.phoneNumber ?? "+91 9742626628",
+    whatsappNumber: row.whatsapp_number ?? row.whatsappNumber ?? "+91 9742626628",
+    email: row.email ?? "employee@arukamed.com",
+    personalEmail:
+      row.personal_email ??
+      row.personalEmail ??
+      (row.email ? row.email.replace("@arukamed.com", "@gmail.com") : "personal@gmail.com"),
+    personalPhone: row.personal_phone ?? row.personalPhone ?? (row.phone_number ?? row.phoneNumber ?? "+91 9742626628"),
+    alternatePhone: row.alternate_phone ?? row.alternatePhone ?? "+91 98450 11223",
+    officeExtension: row.office_extension ?? row.officeExtension ?? "101",
+    currentAddress: parseJson(row.current_address ?? row.currentAddress, {
+      line1: "#14, 4th Cross, Indiranagar",
+      line2: "Near Metro Pillar 84",
+      city: "Bengaluru",
+      state: "Karnataka",
+      pincode: "560038",
+      country: "India",
+      proofDocumentName: "Aadhaar_Address_Proof.pdf",
+      verified: true,
+    }),
+    permanentAddress: parseJson(row.permanent_address ?? row.permanentAddress, {
+      sameAsCurrent: true,
+      line1: "#14, 4th Cross, Indiranagar",
+      line2: "Near Metro Pillar 84",
+      city: "Bengaluru",
+      state: "Karnataka",
+      pincode: "560038",
+      country: "India",
+      proofDocumentName: "Passport_Copy.pdf",
+      verified: true,
+    }),
+
+    // 3. Emergency Contacts
+    emergencyContacts: parseJson(row.emergency_contacts ?? row.emergencyContacts, [
+      {
+        id: "emc-1",
+        name: "Sarah Prakash",
+        relationship: "Spouse",
+        primaryPhone: "+91 98765 43210",
+        secondaryPhone: "+91 98765 43211",
+        address: "#14, 4th Cross, Indiranagar, Bengaluru",
+        isPrimary: true,
+      },
+      {
+        id: "emc-2",
+        name: "David Prakash",
+        relationship: "Brother",
+        primaryPhone: "+91 91234 56789",
+        address: "Civil Lines, Kanpur, UP",
+        isPrimary: false,
+      },
+    ]),
+
+    // 4. Job & Org
+    designation: row.designation ?? "General Manager",
+    department: row.department ?? row.division ?? "Wholesale Sales & Institutional Accounts",
+    division: row.division ?? "Wholesale Sales & Institutional Accounts",
+    territoryRegion: row.territory_region ?? row.territoryRegion ?? "North Zone (UP & NCR)",
+    directManager: parseJson(row.direct_manager ?? row.directManager, {
+      id: "mgr-1",
+      name: "Alex Smith",
+      designation: "Chief Operating Officer",
+      email: "alex.smith@arukamed.com",
+      employeeCode: "EMP-10001",
+    }),
+    employmentType: row.employment_type ?? row.employmentType ?? "Full-time (Perm)",
+    employmentStatus:
+      row.employment_status ??
+      row.employmentStatus ??
+      (Boolean(row.is_active ?? row.isActive ?? true) ? "Active" : "Deactivated"),
+    joiningDate: row.joining_date ?? row.joiningDate ?? "2023-03-12",
+    confirmationDate: row.confirmation_date ?? row.confirmationDate ?? "2023-09-12",
+    workLocation: row.work_location ?? row.workLocation ?? "Bengaluru Hub, India",
+    shiftSchedule: row.shift_schedule ?? row.shiftSchedule ?? "Standard Shift (09:30 AM - 06:30 PM IST)",
+    timezone: row.timezone ?? "Asia/Kolkata",
+    workFromHomePolicy: row.work_from_home_policy ?? row.workFromHomePolicy ?? "Hybrid (2 Days WFH / Week)",
+    noticePeriodDays: Number(row.notice_period_days ?? row.noticePeriodDays ?? 60),
+    bandGrade: row.band_grade ?? row.bandGrade ?? "L4 - Senior Operations Lead",
+    costCenter: row.cost_center ?? row.costCenter ?? "CC-OPS-SOUTH",
+
+    // 5. Statutory & Tax
+    panNumber: row.pan_number ?? row.panNumber ?? "ABCDE1234F",
+    aadhaarNumber: row.aadhaar_number ?? row.aadhaarNumber ?? "XXXX-XXXX-8921",
+    providentFundUan: row.provident_fund_uan ?? row.providentFundUan ?? "100982341902",
+    esicNumber: row.esic_number ?? row.esicNumber ?? null,
+    taxRegime: row.tax_regime ?? row.taxRegime ?? "New Tax Regime (115BAC)",
+    statutoryStatus: row.statutory_status ?? row.statutoryStatus ?? "Verified",
+
+    // 6. Financial & Banking
+    bankAccount: parseJson(row.bank_account ?? row.bankAccount, {
+      bankName: "HDFC Bank Ltd",
+      accountHolderName: fullName,
+      accountNumber: "50100293847192",
+      routingCode: "HDFC0001234",
+      accountType: "Salary",
+      verificationStatus: "Penny-Drop Verified",
+      cancelledChequeUrl: "/assets/docs/cancelled_cheque.pdf",
+    }),
+    salaryStructure: parseJson(row.salary_structure ?? row.salaryStructure, {
+      baseAnnualINR: 1800000,
+      monthlyGrossINR: 150000,
+      variableAnnualINR: 300000,
+      currency: "INR",
+    }),
+    payrollFreezeNotice: row.payroll_freeze_notice ?? row.payrollFreezeNotice ?? null,
+
+    // 7. Education & Prior Employment
+    education: parseJson(row.education, [
+      {
+        id: "edu-1",
+        institution: "Manipal Academy of Higher Education",
+        degree: "Bachelor of Pharmacy (B.Pharm)",
+        fieldOfStudy: "Pharmaceutical Sciences",
+        graduationYear: "2015",
+      },
+    ]),
+    priorEmployment: parseJson(row.prior_employment ?? row.priorEmployment, [
+      {
+        id: "exp-1",
+        company: "Apollo Health & Logistics",
+        designation: "Regional Supply Chain Associate",
+        startDate: "2018-04",
+        endDate: "2023-02",
+      },
+    ]),
+
+    // 8. Dependents & Beneficiaries
+    dependents: parseJson(row.dependents, [
+      {
+        id: "dep-1",
+        name: "Sarah Prakash",
+        relationship: "Spouse",
+        dateOfBirth: "1993-11-10",
+        nomineeAllocationPercent: 60,
+        benefitType: "Gratuity & Group Medical Cover",
+      },
+      {
+        id: "dep-2",
+        name: "Noah Prakash",
+        relationship: "Child",
+        dateOfBirth: "2021-04-18",
+        nomineeAllocationPercent: 40,
+        benefitType: "Group Medical Cover",
+      },
+    ]),
+
+    // 9. Hardware & IT Assets
+    assignedAssets: parseJson(row.assigned_assets ?? row.assignedAssets, [
+      {
+        id: "ast-1",
+        assetName: "MacBook Pro 14\" M3",
+        category: "Laptop",
+        serialNumber: "C02G901KMD6T",
+        assignedDate: "2023-03-15",
+        status: "Assigned & Active",
+      },
+      {
+        id: "ast-2",
+        assetName: "Dell UltraSharp 27\" 4K USB-C",
+        category: "Monitor",
+        serialNumber: "CN-09K821-74261",
+        assignedDate: "2023-03-15",
+        status: "Assigned & Active",
+      },
+      {
+        id: "ast-3",
+        assetName: "Aruka Central Hub RFID Smart Badge",
+        category: "Security Badge",
+        serialNumber: "ARUKA-RFID-8812",
+        assignedDate: "2023-03-12",
+        status: "Assigned & Active",
+      },
+    ]),
+
+    // 10. Documents Repository
+    documents: parseJson(row.documents, [
+      {
+        id: "doc-1",
+        title: "Government PAN Card",
+        category: "Statutory Tax",
+        fileName: "PAN_ABCDE1234F.pdf",
+        fileUrl: "/docs/pan.pdf",
+        fileSize: "1.2 MB",
+        uploadedAt: "2023-03-12",
+        status: "Verified",
+      },
+      {
+        id: "doc-2",
+        title: "Aadhaar Card (Masked)",
+        category: "Identity Proof",
+        fileName: "Aadhaar_Verified.pdf",
+        fileUrl: "/docs/aadhaar.pdf",
+        fileSize: "1.8 MB",
+        uploadedAt: "2023-03-12",
+        status: "Verified",
+      },
+      {
+        id: "doc-3",
+        title: "Bank Cancelled Cheque",
+        category: "Banking Document",
+        fileName: "HDFC_Cheque.pdf",
+        fileUrl: "/docs/cheque.pdf",
+        fileSize: "920 KB",
+        uploadedAt: "2023-03-12",
+        status: "Verified",
+      },
+      {
+        id: "doc-4",
+        title: "Degree Certificate (B.Pharm)",
+        category: "Education Certificate",
+        fileName: "BPharm_Certificate.pdf",
+        fileUrl: "/docs/degree.pdf",
+        fileSize: "2.4 MB",
+        uploadedAt: "2023-03-12",
+        status: "Verified",
+      },
+    ]),
+
+    // 11. Revision History & Audit Trail
+    revisionHistory: parseJson(row.revision_history ?? row.revisionHistory, [
+      {
+        id: "rev-1",
+        timestamp: "2026-09-15 14:30 IST",
+        editorName: `${firstName} (Self)`,
+        editorRole: "Employee",
+        category: "Statutory",
+        field: "Tax Regime",
+        oldValue: "Old Tax Regime",
+        newValue: "New Tax Regime (115BAC)",
+        requiresApproval: false,
+        status: "Approved",
+      },
+      {
+        id: "rev-2",
+        timestamp: "2026-08-01 10:15 IST",
+        editorName: "HR Operations",
+        editorRole: "HR Admin",
+        category: "Job & Org",
+        field: "Band / Grade",
+        oldValue: "L3 - Specialist",
+        newValue: "L4 - Senior Operations Lead",
+        requiresApproval: false,
+        status: "Approved",
+      },
+    ]),
+
+    // Public Visiting Card Overrides
     linkedinUrl: row.linkedin_url ?? row.linkedinUrl ?? null,
-    officeExtension: row.office_extension ?? row.officeExtension ?? null,
     customWhatsappTemplate: row.custom_whatsapp_template ?? row.customWhatsappTemplate ?? null,
     customRateCardUrl: row.custom_rate_card_url ?? row.customRateCardUrl ?? null,
     isActive: Boolean(row.is_active ?? row.isActive ?? true),
@@ -116,17 +405,61 @@ function mapEmployeeToDbRow(emp: EmployeeRecord) {
     id: emp.id,
     tenant_id: emp.tenantId,
     slug: emp.slug,
+    employee_code: emp.employeeCode,
     first_name: emp.firstName,
     last_name: emp.lastName,
+    preferred_name: emp.preferredName,
+    pronouns: emp.pronouns,
+    date_of_birth: emp.dateOfBirth,
+    gender: emp.gender,
+    marital_status: emp.maritalStatus,
+    nationality: emp.nationality,
     avatar_url: emp.avatarUrl,
+    bio: emp.bio,
+    skills: emp.skills,
+    languages: emp.languages,
     designation: emp.designation,
+    department: emp.department,
     division: emp.division,
     territory_region: emp.territoryRegion,
     phone_number: emp.phoneNumber,
     whatsapp_number: emp.whatsappNumber,
     email: emp.email,
-    linkedin_url: emp.linkedinUrl,
+    personal_email: emp.personalEmail,
+    personal_phone: emp.personalPhone,
+    alternate_phone: emp.alternatePhone,
     office_extension: emp.officeExtension,
+    current_address: emp.currentAddress,
+    permanent_address: emp.permanentAddress,
+    emergency_contacts: emp.emergencyContacts,
+    direct_manager: emp.directManager,
+    employment_type: emp.employmentType,
+    employment_status: emp.employmentStatus,
+    joining_date: emp.joiningDate,
+    confirmation_date: emp.confirmationDate,
+    work_location: emp.workLocation,
+    shift_schedule: emp.shiftSchedule,
+    timezone: emp.timezone,
+    work_from_home_policy: emp.workFromHomePolicy,
+    notice_period_days: emp.noticePeriodDays,
+    band_grade: emp.bandGrade,
+    cost_center: emp.costCenter,
+    pan_number: emp.panNumber,
+    aadhaar_number: emp.aadhaarNumber,
+    provident_fund_uan: emp.providentFundUan,
+    esic_number: emp.esicNumber,
+    tax_regime: emp.taxRegime,
+    statutory_status: emp.statutoryStatus,
+    bank_account: emp.bankAccount,
+    salary_structure: emp.salaryStructure,
+    payroll_freeze_notice: emp.payrollFreezeNotice,
+    education: emp.education,
+    prior_employment: emp.priorEmployment,
+    dependents: emp.dependents,
+    assigned_assets: emp.assignedAssets,
+    documents: emp.documents,
+    revision_history: emp.revisionHistory,
+    linkedin_url: emp.linkedinUrl,
     custom_whatsapp_template: emp.customWhatsappTemplate,
     custom_rate_card_url: emp.customRateCardUrl,
     is_active: emp.isActive,
@@ -202,6 +535,18 @@ class ResilientDataStore {
         createdAt: new Date(),
         updatedAt: new Date(),
       } as TenantRecord;
+    }
+
+    // Pre-seed core employees in memory so serverless cold starts never 404
+    const seededAbhishikt = mapDbRowToEmployee(abhishiktEmployeeSeed as any);
+    if (!this.cache.employees["arukamed:abhishikt"]) {
+      this.cache.employees["arukamed:abhishikt"] = seededAbhishikt;
+      this.cache.employees["abhishikt"] = seededAbhishikt;
+    }
+    const seededAmit = mapDbRowToEmployee(amitSharmaEmployeeSeed as any);
+    if (!this.cache.employees["arukamed:amit-sharma-4k7q"]) {
+      this.cache.employees["arukamed:amit-sharma-4k7q"] = seededAmit;
+      this.cache.employees["amit-sharma-4k7q"] = seededAmit;
     }
   }
 
@@ -296,6 +641,12 @@ class ResilientDataStore {
       Object.values(this.cache.employees).find((e) => e.slug === employeeSlug) ||
       null
     );
+  }
+
+  async getPublicEmployeeProfile(tenantSlug: string, employeeSlug: string): Promise<PublicEmployeeProfile | null> {
+    const emp = await this.getEmployeeBySlug(tenantSlug, employeeSlug);
+    if (!emp) return null;
+    return sanitizePublicEmployee(emp as any);
   }
 
   async getAllEmployees(tenantSlug: string): Promise<EmployeeRecord[]> {

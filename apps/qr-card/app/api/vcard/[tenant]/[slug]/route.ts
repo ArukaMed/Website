@@ -54,7 +54,7 @@ export async function GET(
 
   // Retrieve actual employee and tenant from dataStore
   const dbTenant = await dataStore.getTenantBySlug(tenantSlug || "arukamed");
-  const dbEmployee = await dataStore.getEmployeeBySlug(tenantSlug || "arukamed", employeeSlug);
+  const dbEmployee = await dataStore.getPublicEmployeeProfile(tenantSlug || "arukamed", employeeSlug);
 
   const tenant = dbTenant || defaultFallbackTenant;
   const employee = dbEmployee;

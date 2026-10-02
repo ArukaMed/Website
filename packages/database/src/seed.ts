@@ -106,3 +106,31 @@ export const amitSharmaEmployeeSeed: NewEmployeeRecord = {
   vcardDownloads: 68,
   whatsappClicks: 53,
 };
+
+export const ABHISHIKT_EMPLOYEE_ID = "69e28012-fbe7-4103-bb43-79a269b5f27d";
+
+export const abhishiktEmployeeSeed: NewEmployeeRecord = {
+  id: ABHISHIKT_EMPLOYEE_ID,
+  tenantId: ARUKA_MED_TENANT_ID,
+  slug: "abhishikt",
+  employeeCode: "EMP-10001",
+  firstName: "Abhishikt Emmanuel",
+  lastName: "Prakash",
+  preferredName: "Abhishikt",
+  pronouns: "He/Him",
+  designation: "General Manager",
+  division: "Wholesale Sales & Institutional Accounts",
+  department: "Wholesale Sales & Institutional Accounts",
+  territoryRegion: "North Zone (UP & NCR)",
+  phoneNumber: "+91 9742626628",
+  whatsappNumber: "+91 9742626628",
+  email: "abhishikt@arukamed.com",
+  officeExtension: "101",
+  workLocation: "Kanpur Central Hub, India",
+  employmentType: "Full-time (Perm)",
+  employmentStatus: "Active",
+  isActive: true,
+  scanCount: 25,
+  vcardDownloads: 12,
+  whatsappClicks: 8,
+};

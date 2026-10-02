@@ -20,16 +20,17 @@ export default async function DefaultCardPage() {
   }
 
   const employees = await dataStore.getAllEmployees(tenant.slug);
-  const employee = employees.find((e) => e.isActive) || employees[0];
+  const rawEmployee = employees.find((e) => e.isActive) || employees[0];
 
-  if (!employee) {
+  if (!rawEmployee) {
     notFound();
   }
 
   // Increment scan count
-  await dataStore.incrementStat(tenant.slug, employee.slug, "scan");
+  await dataStore.incrementStat(tenant.slug, rawEmployee.slug, "scan");
 
-  const vcardUrl = `/api/vcard/${tenant.slug}/${employee.slug}`;
+  const vcardUrl = `/api/vcard/${tenant.slug}/${rawEmployee.slug}`;
+  const employee = (await dataStore.getPublicEmployeeProfile(tenant.slug, rawEmployee.slug)) || rawEmployee;
 
   return (
     <>

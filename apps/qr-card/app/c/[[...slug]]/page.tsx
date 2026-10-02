@@ -29,7 +29,7 @@ export default async function CatchAllCardPage({ params }: PageProps) {
 
 
   const tenant = await dataStore.getTenantBySlug(tenantSlug);
-  const employee = await dataStore.getEmployeeBySlug(tenantSlug, employeeSlug);
+  const employee = await dataStore.getPublicEmployeeProfile(tenantSlug, employeeSlug);
 
   if (!tenant || !employee || !employee.isActive) {
     notFound();

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import type { Tenant, Employee, TenantThemeConfig, UserSession, UserRoleType } from "@aegis/types";
 import { UserRole } from "@aegis/types";
 import { getCommercialPrintSpec } from "@/lib/qr-engine";
+import { EmployeeHub } from "./employees/employee-hub";
 
 interface AdminDashboardProps {
   initialTenant: Tenant;
@@ -30,23 +31,6 @@ export function AdminDashboard({
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-  // Employee Edit Modal State
-  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editFirstName, setEditFirstName] = useState("");
-  const [editLastName, setEditLastName] = useState("");
-  const [editDesignation, setEditDesignation] = useState("");
-  const [editDivision, setEditDivision] = useState("");
-  const [editTerritory, setEditTerritory] = useState("");
-  const [editPhone, setEditPhone] = useState("");
-  const [editWhatsapp, setEditWhatsapp] = useState("");
-  const [editEmail, setEditEmail] = useState("");
-  const [editOfficeExt, setEditOfficeExt] = useState("");
-  const [editLinkedin, setEditLinkedin] = useState("");
-  const [editCustomWhatsapp, setEditCustomWhatsapp] = useState("");
-  const [editCustomRateCard, setEditCustomRateCard] = useState("");
-  const [editIsActive, setEditIsActive] = useState(true);
-  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Core CMS Data State
   const [tenant, setTenant] = useState<Tenant>(initialTenant);
@@ -57,7 +41,6 @@ export function AdminDashboard({
   const [activeTab, setActiveTab] = useState<"details" | "employees" | "qr" | "preview" | "theme" | "leads">("details");
   const [detailsSubTab, setDetailsSubTab] = useState<"shared" | "website" | "card">("shared");
   const [selectedEmployeeSlug, setSelectedEmployeeSlug] = useState<string>(initialEmployees[0]?.slug || "");
-  const [isAddOpen, setIsAddOpen] = useState(false);
   const [isSavingDetails, setIsSavingDetails] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
@@ -108,19 +91,6 @@ export function AdminDashboard({
     enableLiveColdRoomTrace: tenant.featureFlags.enableLiveColdRoomTrace ?? true,
   });
 
-  // New Employee Modal Form State
-  const [newFirstName, setNewFirstName] = useState("");
-  const [newLastName, setNewLastName] = useState("");
-  const [newDesignation, setNewDesignation] = useState("");
-  const [newDivision, setNewDivision] = useState("Wholesale Sales & Institutional Accounts");
-  const [newTerritory, setNewTerritory] = useState("North Zone (UP & NCR)");
-  const [newPhone, setNewPhone] = useState("+91 98390 ");
-  const [newWhatsapp, setNewWhatsapp] = useState("");
-  const [newEmail, setNewEmail] = useState("");
-  const [newOfficeExtension, setNewOfficeExtension] = useState("101");
-  const [newSlug, setNewSlug] = useState("");
-  const [newCustomGreeting, setNewCustomGreeting] = useState("");
-  const [newCustomRateCard, setNewCustomRateCard] = useState("");
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -128,9 +98,23 @@ export function AdminDashboard({
   };
 
   // RBAC Permission Helpers
-  const canEditCorporateDetails = session?.role === UserRole.SUPER_ADMIN || session?.role === UserRole.BRAND_ADMIN;
-  const canManageEmployees = session?.role === UserRole.SUPER_ADMIN || session?.role === UserRole.BRAND_ADMIN;
-  const canToggleRepStatus = session?.role === UserRole.SUPER_ADMIN || session?.role === UserRole.BRAND_ADMIN || session?.role === UserRole.OPS_MANAGER;
+  const canEditCorporateDetails =
+    session?.role === UserRole.SUPER_ADMIN ||
+    session?.role === UserRole.FOUNDER ||
+    session?.role === UserRole.BRAND_ADMIN;
+
+  const canManageEmployees =
+    session?.role === UserRole.SUPER_ADMIN ||
+    session?.role === UserRole.FOUNDER ||
+    session?.role === UserRole.BRAND_ADMIN ||
+    session?.role === UserRole.R_HRO;
+
+  const canToggleRepStatus =
+    session?.role === UserRole.SUPER_ADMIN ||
+    session?.role === UserRole.FOUNDER ||
+    session?.role === UserRole.BRAND_ADMIN ||
+    session?.role === UserRole.OPS_MANAGER ||
+    session?.role === UserRole.R_HRO;
 
   // Handle Secure Login
   const handleLogin = async (e: React.FormEvent) => {
@@ -218,81 +202,6 @@ export function AdminDashboard({
     showToast("Signed out from Admin CMS");
   };
 
-  // Open Edit Employee Modal and populate state
-  const openEditEmployee = (emp: Employee) => {
-    setEditingEmployee(emp);
-    setEditFirstName(emp.firstName || "");
-    setEditLastName(emp.lastName || "");
-    setEditDesignation(emp.designation || "");
-    setEditDivision(emp.division || "");
-    setEditTerritory(emp.territoryRegion || "");
-    setEditPhone(emp.phoneNumber || "");
-    setEditWhatsapp(emp.whatsappNumber || emp.phoneNumber || "");
-    setEditEmail(emp.email || "");
-    setEditOfficeExt(emp.officeExtension || "");
-    setEditLinkedin(emp.linkedinUrl || "");
-    setEditCustomWhatsapp(emp.customWhatsappTemplate || "");
-    setEditCustomRateCard(emp.customRateCardUrl || "");
-    setEditIsActive(emp.isActive ?? true);
-    setIsEditOpen(true);
-  };
-
-  // Submit Representative Updates
-  const handleSaveEditEmployee = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingEmployee) return;
-    setIsSavingEdit(true);
-
-    try {
-      const patch = {
-        firstName: editFirstName.trim(),
-        lastName: editLastName.trim(),
-        designation: editDesignation.trim(),
-        division: editDivision.trim(),
-        territoryRegion: editTerritory.trim(),
-        phoneNumber: editPhone.trim(),
-        whatsappNumber: editWhatsapp.trim(),
-        email: editEmail.trim(),
-        officeExtension: editOfficeExt.trim(),
-        linkedinUrl: editLinkedin.trim() || null,
-        customWhatsappTemplate: editCustomWhatsapp.trim() || null,
-        customRateCardUrl: editCustomRateCard.trim() || null,
-        isActive: editIsActive,
-      };
-
-      const res = await fetch("/api/employees", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tenantSlug: tenant.slug,
-          employeeSlug: editingEmployee.slug,
-          patch,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        showToast(`Failed: ${data.message || "Error updating employee"}`);
-        return;
-      }
-
-      setEmployees((prev) =>
-        prev.map((emp) =>
-          emp.id === editingEmployee.id
-            ? { ...emp, ...patch, updatedAt: new Date() }
-            : emp
-        )
-      );
-
-      showToast(`Updated ${editFirstName} ${editLastName}'s profile & digital card`);
-      setIsEditOpen(false);
-      setEditingEmployee(null);
-    } catch {
-      showToast("Network error while updating representative");
-    } finally {
-      setIsSavingEdit(false);
-    }
-  };
 
   // Save All Details (Shared, Website, Card)
   const handleSaveAllDetails = async (e: React.FormEvent) => {
@@ -414,151 +323,6 @@ export function AdminDashboard({
     }
   };
 
-  // Add Employee and automatically sync QR-Card
-  const handleAddEmployee = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!canManageEmployees) {
-      showToast("Access Denied: Your role lacks permission to onboard employees.");
-      return;
-    }
-
-    const cleanSlug = (
-      newSlug.trim() ||
-      `${newFirstName.toLowerCase()}-${newLastName.toLowerCase()}-${Math.random().toString(36).substring(2, 6)}`
-    )
-      .toLowerCase()
-      .replace(/[^a-z0-9-]/g, "-")
-      .replace(/-+/g, "-");
-
-    const newEmp: Employee = {
-      id: crypto.randomUUID(),
-      tenantId: tenant.id,
-      slug: cleanSlug,
-      firstName: newFirstName.trim(),
-      lastName: newLastName.trim(),
-      designation: newDesignation.trim() || "Wholesale Sales Representative",
-      division: newDivision.trim(),
-      territoryRegion: newTerritory.trim(),
-      phoneNumber: newPhone.trim(),
-      whatsappNumber: (newWhatsapp || newPhone).trim(),
-      email: newEmail.trim(),
-      linkedinUrl: "",
-      officeExtension: newOfficeExtension.trim() || "101",
-      customWhatsappTemplate: newCustomGreeting.trim() || null,
-      customRateCardUrl: newCustomRateCard.trim() || null,
-      isActive: true,
-      scanCount: 0,
-      vcardDownloads: 0,
-      whatsappClicks: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    // Update state immediately so QR-Card & studio are updated
-    setEmployees((prev) => [newEmp, ...prev]);
-    setSelectedEmployeeSlug(newEmp.slug);
-    setIsAddOpen(false);
-    showToast(`Employee ${newFirstName} ${newLastName} onboarded! QR card is now live.`);
-
-    // Persist to server API
-    try {
-      await fetch("/api/employees", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tenantSlug: tenant.slug,
-          firstName: newFirstName,
-          lastName: newLastName,
-          designation: newDesignation,
-          division: newDivision,
-          territoryRegion: newTerritory,
-          phoneNumber: newPhone,
-          whatsappNumber: newWhatsapp || newPhone,
-          email: newEmail,
-          officeExtension: newOfficeExtension,
-          slug: cleanSlug,
-          customWhatsappTemplate: newCustomGreeting || null,
-          customRateCardUrl: newCustomRateCard || null,
-        }),
-      });
-    } catch {
-      // Local state is already updated
-    }
-
-    // Reset Form
-    setNewFirstName("");
-    setNewLastName("");
-    setNewDesignation("");
-    setNewPhone("+91 98390 ");
-    setNewWhatsapp("");
-    setNewEmail("");
-    setNewSlug("");
-    setNewCustomGreeting("");
-    setNewCustomRateCard("");
-  };
-
-  // Toggle Employee Status
-  const toggleEmployeeStatus = async (id: string) => {
-    if (!canToggleRepStatus) {
-      showToast("Access Denied: You do not have permission to alter rep lifecycle status.");
-      return;
-    }
-
-    const emp = employees.find((e) => e.id === id);
-    if (!emp) return;
-
-    const nextState = !emp.isActive;
-
-    setEmployees((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, isActive: nextState } : e))
-    );
-
-    showToast(
-      nextState
-        ? `${emp.firstName}'s card activated.`
-        : `${emp.firstName} offboarded. Card QR now routes to central brand desk.`
-    );
-
-    try {
-      await fetch("/api/employees", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tenantSlug: tenant.slug,
-          employeeSlug: emp.slug,
-          patch: { isActive: nextState },
-        }),
-      });
-    } catch {
-      // local state updated
-    }
-  };
-
-  // Delete Employee
-  const handleDeleteEmployee = async (slug: string, name: string) => {
-    if (!canManageEmployees) {
-      showToast("Access Denied: Only Brand and Super Admins can remove employees.");
-      return;
-    }
-
-    if (!confirm(`Are you sure you want to remove ${name}? Their digital visiting card will be permanently deleted.`)) {
-      return;
-    }
-
-    setEmployees((prev) => prev.filter((e) => e.slug !== slug));
-    if (selectedEmployeeSlug === slug) {
-      setSelectedEmployeeSlug(employees.find((e) => e.slug !== slug)?.slug || "");
-    }
-    showToast(`Removed employee ${name}`);
-
-    try {
-      await fetch(`/api/employees?tenant=${tenant.slug}&employee=${slug}`, {
-        method: "DELETE",
-      });
-    } catch {
-      // local state updated
-    }
-  };
 
   const handleColorChange = (key: keyof TenantThemeConfig, color: string) => {
     if (!canEditCorporateDetails) {
@@ -719,13 +483,21 @@ export function AdminDashboard({
 
   // Role Badge Styling
   const roleBadgeColor =
-    session.role === UserRole.SUPER_ADMIN
+    session.role === UserRole.FOUNDER
+      ? "bg-amber-100 text-amber-900 border-amber-300 font-semibold"
+      : session.role === UserRole.SUPER_ADMIN
       ? "bg-purple-100 text-purple-800 border-purple-300"
       : session.role === UserRole.BRAND_ADMIN
       ? "bg-blue-100 text-blue-800 border-blue-300"
       : session.role === UserRole.OPS_MANAGER
       ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-      : "bg-amber-100 text-amber-800 border-amber-300";
+      : session.role === UserRole.R_HRO
+      ? "bg-cyan-100 text-cyan-800 border-cyan-300"
+      : session.role === UserRole.R_PAY
+      ? "bg-teal-100 text-teal-800 border-teal-300"
+      : session.role === UserRole.R_AUD
+      ? "bg-indigo-100 text-indigo-800 border-indigo-300"
+      : "bg-gray-100 text-gray-800 border-gray-300";
 
   const navItems = [
     {
@@ -1664,188 +1436,22 @@ export function AdminDashboard({
         {/* TAB 2: EMPLOYEES & AUTOMATED QR CARD LIFECYCLE                            */}
         {/* ========================================================================= */}
         {activeTab === "employees" && (
-          <div>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900 font-display">
-                  Digital Visiting Cards & Rep Directory
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Onboarding an employee immediately generates their unique live digital card (
-                  <code className="text-navy font-mono">/c/[slug]</code>) and print-ready QR code.
-                </p>
-              </div>
-
-              {canManageEmployees && (
-                <button
-                  type="button"
-                  onClick={() => setIsAddOpen(true)}
-                  className="bg-[#09162D] hover:bg-[#12284E] text-[#E3B15F] text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-1.5 self-start sm:self-auto"
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
-                  <span>Onboard New Employee</span>
-                </button>
-              )}
-            </div>
-
-            {/* Table */}
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold border-b border-slate-200">
-                    <tr>
-                      <th className="py-3 px-4">Representative</th>
-                      <th className="py-3 px-4">Designation & Region</th>
-                      <th className="py-3 px-4">Direct Contact</th>
-                      <th className="py-3 px-4">Scans / Downloads</th>
-                      <th className="py-3 px-4">Lifecycle Status</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-xs">
-                    {employees.map((emp) => {
-                      const empCardUrl = `${cardBaseUrl}/c/${emp.slug}`;
-                      return (
-                        <tr key={emp.id} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="py-3 px-4">
-                            <div className="font-bold text-slate-900 flex items-center gap-2">
-                              <span>{emp.firstName} {emp.lastName}</span>
-                              {selectedEmployeeSlug === emp.slug && (
-                                <span className="text-[10px] bg-blue-100 text-blue-800 font-mono px-1.5 py-0.5 rounded font-bold">
-                                  Selected
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[11px] font-mono text-slate-400 mt-0.5">/c/{emp.slug}</div>
-                          </td>
-
-                          <td className="py-3 px-4">
-                            <div className="text-slate-800 font-medium">{emp.designation}</div>
-                            <div className="text-[11px] text-amber-700 font-semibold flex items-center gap-1 mt-0.5">
-                              <svg className="h-3 w-3 text-amber-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                              </svg>
-                              <span>{emp.territoryRegion}</span>
-                            </div>
-                          </td>
-
-                          <td className="py-3 px-4 font-mono text-[11px]">
-                            <div className="text-slate-800 font-semibold">{emp.phoneNumber}</div>
-                            <div className="text-slate-400">{emp.email}</div>
-                          </td>
-
-                          <td className="py-3 px-4">
-                            <div className="font-semibold text-slate-800">{emp.scanCount} scans</div>
-                            <div className="text-[11px] text-slate-400">{emp.vcardDownloads} vCards saved</div>
-                          </td>
-
-                          <td className="py-3 px-4">
-                            <span
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
-                                emp.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                              }`}
-                            >
-                              <span className={`h-1.5 w-1.5 rounded-full ${emp.isActive ? "bg-green-500" : "bg-red-500"}`}></span>
-                              <span>{emp.isActive ? "Active Rep" : "Deactivated (Rerouted)"}</span>
-                            </span>
-                          </td>
-
-                          <td className="py-3 px-4 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              {/* Edit Representative Details */}
-                              {canManageEmployees && (
-                                <button
-                                  type="button"
-                                  onClick={() => openEditEmployee(emp)}
-                                  className="px-2.5 py-1 rounded-lg border border-amber-300 bg-amber-50/60 text-amber-800 hover:bg-amber-100 font-semibold flex items-center gap-1 transition-colors"
-                                  title="Edit representative credentials & card"
-                                >
-                                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                  </svg>
-                                  <span>Edit</span>
-                                </button>
-                              )}
-
-                              {/* Select in Studio */}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedEmployeeSlug(emp.slug);
-                                  setActiveTab("qr");
-                                }}
-                                className="px-2.5 py-1 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 font-medium"
-                                title="Open QR Studio for this rep"
-                              >
-                                QR Studio
-                              </button>
-
-                              {/* Copy Card Link */}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(empCardUrl);
-                                  showToast(`Copied ${emp.firstName}'s card URL: ${empCardUrl}`);
-                                }}
-                                className="px-2.5 py-1 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 font-medium"
-                                title="Copy public card URL"
-                              >
-                                Copy Link
-                              </button>
-
-                              {/* Open Card */}
-                              <a
-                                href={empCardUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="px-2.5 py-1 rounded-lg border border-slate-300 text-blue-700 hover:bg-blue-50 font-medium"
-                                title="Visit live card in new tab"
-                              >
-                                ↗
-                              </a>
-
-                              {/* Status Toggle (Ops & Brand Admin) */}
-                              {canToggleRepStatus && (
-                                <button
-                                  type="button"
-                                  onClick={() => toggleEmployeeStatus(emp.id)}
-                                  className={`px-2.5 py-1 rounded-lg border font-medium ${
-                                    emp.isActive
-                                      ? "border-red-200 text-red-700 hover:bg-red-50"
-                                      : "border-green-200 text-green-700 hover:bg-green-50"
-                                  }`}
-                                  title={emp.isActive ? "Deactivate and route traffic to brand desk" : "Re-activate rep card"}
-                                >
-                                  {emp.isActive ? "Offboard" : "Activate"}
-                                </button>
-                              )}
-
-                              {/* Delete Employee (Brand & Super Admin) */}
-                              {canManageEmployees && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteEmployee(emp.slug, `${emp.firstName} ${emp.lastName}`)}
-                                  className="p-1 rounded-lg text-slate-400 hover:text-red-700 hover:bg-red-50"
-                                  title="Delete Employee"
-                                >
-                                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
+          <EmployeeHub
+            employees={employees}
+            setEmployees={setEmployees}
+            selectedEmployeeSlug={selectedEmployeeSlug}
+            setSelectedEmployeeSlug={setSelectedEmployeeSlug}
+            cardBaseUrl={cardBaseUrl}
+            tenantSlug={tenant.slug}
+            session={session}
+            canManageEmployees={canManageEmployees}
+            canToggleRepStatus={canToggleRepStatus}
+            onOpenQRStudio={(slug) => {
+              setSelectedEmployeeSlug(slug);
+              setActiveTab("qr");
+            }}
+            showToast={showToast}
+          />
         )}
 
         {/* ========================================================================= */}
@@ -2178,352 +1784,6 @@ export function AdminDashboard({
     </div>
 
 
-      {/* Edit Representative Modal */}
-      {isEditOpen && editingEmployee && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl w-full max-w-xl p-6 sm:p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4 border-b pb-3">
-              <div>
-                <h3 className="text-base font-bold text-slate-900 font-display">Edit Representative Details</h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Update live contact credentials, territory, and digital card settings for <strong className="text-slate-800">{editingEmployee.firstName} {editingEmployee.lastName}</strong>
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsEditOpen(false);
-                  setEditingEmployee(null);
-                }}
-                className="text-slate-400 hover:text-slate-700 p-1"
-                aria-label="Close"
-              >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveEditEmployee} className="space-y-3.5 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold block mb-1">First Name *</label>
-                  <input
-                    required
-                    value={editFirstName}
-                    onChange={(e) => setEditFirstName(e.target.value)}
-                    className="w-full p-2.5 border rounded-xl"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold block mb-1">Last Name *</label>
-                  <input
-                    required
-                    value={editLastName}
-                    onChange={(e) => setEditLastName(e.target.value)}
-                    className="w-full p-2.5 border rounded-xl"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold block mb-1">Designation *</label>
-                  <input
-                    required
-                    value={editDesignation}
-                    onChange={(e) => setEditDesignation(e.target.value)}
-                    className="w-full p-2.5 border rounded-xl"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold block mb-1">Division / Unit</label>
-                  <input
-                    value={editDivision}
-                    onChange={(e) => setEditDivision(e.target.value)}
-                    className="w-full p-2.5 border rounded-xl"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="font-semibold block mb-1">Territory / Region *</label>
-                <input
-                  required
-                  value={editTerritory}
-                  onChange={(e) => setEditTerritory(e.target.value)}
-                  className="w-full p-2.5 border rounded-xl"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold block mb-1">Mobile Phone *</label>
-                  <input
-                    required
-                    value={editPhone}
-                    onChange={(e) => setEditPhone(e.target.value)}
-                    className="w-full p-2.5 border rounded-xl font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold block mb-1">WhatsApp Phone</label>
-                  <input
-                    value={editWhatsapp}
-                    onChange={(e) => setEditWhatsapp(e.target.value)}
-                    className="w-full p-2.5 border rounded-xl font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold block mb-1">Official Email *</label>
-                  <input
-                    type="email"
-                    required
-                    value={editEmail}
-                    onChange={(e) => setEditEmail(e.target.value)}
-                    className="w-full p-2.5 border rounded-xl font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold block mb-1">Office Extension</label>
-                  <input
-                    value={editOfficeExt}
-                    onChange={(e) => setEditOfficeExt(e.target.value)}
-                    className="w-full p-2.5 border rounded-xl font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="font-semibold block mb-1">LinkedIn Profile URL</label>
-                <input
-                  value={editLinkedin}
-                  onChange={(e) => setEditLinkedin(e.target.value)}
-                  className="w-full p-2.5 border rounded-xl font-mono"
-                  placeholder="https://linkedin.com/in/..."
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold block mb-1">Custom WhatsApp Greeting Template</label>
-                <textarea
-                  rows={2}
-                  value={editCustomWhatsapp}
-                  onChange={(e) => setEditCustomWhatsapp(e.target.value)}
-                  className="w-full p-2.5 border rounded-xl"
-                  placeholder="Hello {name}, I scanned your Aruka Med digital card..."
-                />
-              </div>
-
-              <div className="pt-2 border-t">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={editIsActive}
-                    onChange={(e) => setEditIsActive(e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="font-semibold text-slate-800">
-                    Card Active ({editIsActive ? "Enabled & accessible via QR" : "Disabled & reroutes to corporate"})
-                  </span>
-                </label>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-4 border-t">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsEditOpen(false);
-                    setEditingEmployee(null);
-                  }}
-                  className="px-4 py-2 border rounded-xl text-slate-600 hover:bg-slate-50 font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSavingEdit}
-                  className="px-5 py-2 bg-[#09162D] hover:bg-[#12284E] text-[#E3B15F] font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
-                >
-                  {isSavingEdit ? "Saving Changes..." : "Save Representative Details"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Onboard Single Employee Modal */}
-      {isAddOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl w-full max-w-xl p-6 sm:p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4 border-b pb-3">
-              <div>
-                <h3 className="text-base font-bold text-slate-900 font-display">Onboard Field Sales Representative</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Generates live digital visiting card at /c/[slug] with instant QR sync</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsAddOpen(false)}
-                className="text-slate-400 hover:text-slate-700 p-1"
-                aria-label="Close"
-              >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <form onSubmit={handleAddEmployee} className="space-y-3.5 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold block mb-1">First Name *</label>
-                  <input
-                    required
-                    value={newFirstName}
-                    onChange={(e) => setNewFirstName(e.target.value)}
-                    className="w-full p-2.5 border rounded-xl"
-                    placeholder="e.g. Rahul"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold block mb-1">Last Name *</label>
-                  <input
-                    required
-                    value={newLastName}
-                    onChange={(e) => setNewLastName(e.target.value)}
-                    className="w-full p-2.5 border rounded-xl"
-                    placeholder="e.g. Verma"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold block mb-1">Designation *</label>
-                  <input
-                    required
-                    value={newDesignation}
-                    onChange={(e) => setNewDesignation(e.target.value)}
-                    className="w-full p-2.5 border rounded-xl"
-                    placeholder="e.g. Area Sales Manager"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold block mb-1">Division / Unit</label>
-                  <input
-                    value={newDivision}
-                    onChange={(e) => setNewDivision(e.target.value)}
-                    className="w-full p-2.5 border rounded-xl"
-                    placeholder="e.g. Wholesale Critical Care"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="font-semibold block mb-1">Territory / Region *</label>
-                <input
-                  required
-                  value={newTerritory}
-                  onChange={(e) => setNewTerritory(e.target.value)}
-                  className="w-full p-2.5 border rounded-xl"
-                  placeholder="e.g. North Zone - Kanpur & Lucknow"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold block mb-1">Mobile Calling Number *</label>
-                  <input
-                    required
-                    value={newPhone}
-                    onChange={(e) => setNewPhone(e.target.value)}
-                    className="w-full p-2.5 border rounded-xl font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold block mb-1">WhatsApp Number (if different)</label>
-                  <input
-                    value={newWhatsapp}
-                    onChange={(e) => setNewWhatsapp(e.target.value)}
-                    className="w-full p-2.5 border rounded-xl font-mono"
-                    placeholder="e.g. +91 98390 12345"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold block mb-1">Official Email Address *</label>
-                  <input
-                    required
-                    type="email"
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    className="w-full p-2.5 border rounded-xl"
-                    placeholder={`rep@${tenant.customDomain || `${tenant.slug}.com`}`}
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold block mb-1">Office Extension</label>
-                  <input
-                    value={newOfficeExtension}
-                    onChange={(e) => setNewOfficeExtension(e.target.value)}
-                    className="w-full p-2.5 border rounded-xl font-mono"
-                    placeholder="101"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="font-semibold block mb-1">Custom URL Slug (optional)</label>
-                <input
-                  value={newSlug}
-                  onChange={(e) => setNewSlug(e.target.value)}
-                  className="w-full p-2.5 border rounded-xl font-mono text-[11px]"
-                  placeholder="e.g. rahul-verma-up"
-                />
-                <div className="text-[10px] text-slate-400 mt-0.5">
-                  Leave blank to automatically generate from first and last name.
-                </div>
-              </div>
-
-              <div>
-                <label className="font-semibold block mb-1">Personalized WhatsApp Greeting (optional)</label>
-                <input
-                  value={newCustomGreeting}
-                  onChange={(e) => setNewCustomGreeting(e.target.value)}
-                  className="w-full p-2.5 border rounded-xl text-xs"
-                  placeholder="Hello, I am contacting you regarding bulk wholesale supply via ArukaMed..."
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold block mb-1">Custom Rate Card URL (optional override)</label>
-                <input
-                  value={newCustomRateCard}
-                  onChange={(e) => setNewCustomRateCard(e.target.value)}
-                  className="w-full p-2.5 border rounded-xl font-mono text-[11px]"
-                  placeholder="https://.../files/rahul-special-rate-card.pdf"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full mt-5 bg-[#09162D] hover:bg-[#12284E] text-[#E3B15F] font-bold py-3 rounded-2xl transition-all shadow-md flex items-center justify-center gap-2"
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-                <span>Create Digital Card & Generate Print QR</span>
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Floating Toast Notification */}
       {toastMsg && (

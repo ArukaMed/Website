@@ -28,7 +28,7 @@ export async function PUT(req: NextRequest) {
     // RBAC validation: only SUPER_ADMIN and BRAND_ADMIN can edit corporate & content details
     assertAuthorized({
       user: session,
-      allowedRoles: [UserRole.SUPER_ADMIN, UserRole.BRAND_ADMIN],
+      allowedRoles: [UserRole.SUPER_ADMIN, UserRole.FOUNDER, UserRole.BRAND_ADMIN],
     });
 
     const body = await req.json();
