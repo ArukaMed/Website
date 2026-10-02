@@ -6,6 +6,7 @@ import {
   renderQrToCanvas,
   generateSvgQr,
   QR_PRESETS,
+  QrVariantType,
   QrStylePreset,
   QrModuleShape,
   QrEyeShape,
@@ -43,15 +44,20 @@ export function QrStudio({
     return employees.find((e) => e.slug === selectedEmployeeSlug) || employees[0] || null;
   }, [employees, selectedEmployeeSlug]);
 
-  // QR Styling State
-  const [activePreset, setActivePreset] = useState<QrStylePreset>("aruka-gold");
-  const [darkColor, setDarkColor] = useState(QR_PRESETS["aruka-gold"].darkColor);
-  const [lightColor, setLightColor] = useState(QR_PRESETS["aruka-gold"].lightColor);
-  const [eyeOuterColor, setEyeOuterColor] = useState(QR_PRESETS["aruka-gold"].eyeOuterColor);
-  const [eyeInnerColor, setEyeInnerColor] = useState(QR_PRESETS["aruka-gold"].eyeInnerColor);
-  const [moduleShape, setModuleShape] = useState<QrModuleShape>(QR_PRESETS["aruka-gold"].moduleShape);
-  const [eyeShape, setEyeShape] = useState<QrEyeShape>(QR_PRESETS["aruka-gold"].eyeShape);
-  const [includeLogo, setIncludeLogo] = useState(true);
+  // QR Variant & Styling State
+  const [variant, setVariant] = useState<QrVariantType>("simple");
+  const [ctaText, setCtaText] = useState("SCAN TO CONNECT");
+  const [ctaSubtext, setCtaSubtext] = useState("");
+  const [stampText, setStampText] = useState("ARUKAMED PHARMACEUTICALS • B2B NETWORK");
+
+  const [activePreset, setActivePreset] = useState<QrStylePreset>("simple-black");
+  const [darkColor, setDarkColor] = useState("#000000");
+  const [lightColor, setLightColor] = useState("#FFFFFF");
+  const [eyeOuterColor, setEyeOuterColor] = useState("#000000");
+  const [eyeInnerColor, setEyeInnerColor] = useState("#000000");
+  const [moduleShape, setModuleShape] = useState<QrModuleShape>("square");
+  const [eyeShape, setEyeShape] = useState<QrEyeShape>("square");
+  const [includeLogo, setIncludeLogo] = useState(false);
   const [logoSource, setLogoSource] = useState<"aruka" | "avatar">("aruka");
   const [margin, setMargin] = useState(2);
   const [previewTab, setPreviewTab] = useState<"qr-only" | "card-mockup" | "print-spec">("qr-only");
@@ -100,6 +106,66 @@ export function QrStudio({
     }
   }, [targetType, currentEmployee, cardBaseUrl, customWhatsappMsg, customUrl, tenant.name]);
 
+  // Synchronize subtext default with slug
+  useEffect(() => {
+    if (currentEmployee) {
+      setCtaSubtext(`connect.arukamed.com/${currentEmployee.slug}`);
+    }
+  }, [currentEmployee]);
+
+  // Apply Variant Change
+  const handleSelectVariant = (newVariant: QrVariantType) => {
+    setVariant(newVariant);
+
+    if (newVariant === "simple") {
+      setActivePreset("simple-black");
+      setDarkColor("#000000");
+      setLightColor("#FFFFFF");
+      setEyeOuterColor("#000000");
+      setEyeInnerColor("#000000");
+      setModuleShape("square");
+      setEyeShape("square");
+      setIncludeLogo(false);
+      setMargin(2);
+      showToast("Switched to Simple Minimalist QR Code.");
+    } else if (newVariant === "branded") {
+      setActivePreset("aruka-gold");
+      setDarkColor("#09162D");
+      setLightColor("#FFFFFF");
+      setEyeOuterColor("#C8963E");
+      setEyeInnerColor("#09162D");
+      setModuleShape("rounded");
+      setEyeShape("rounded");
+      setIncludeLogo(true);
+      showToast("Switched to Aruka Executive Branded QR.");
+    } else if (newVariant === "cta-frame") {
+      setActivePreset("aruka-gold");
+      setDarkColor("#09162D");
+      setLightColor("#FFFFFF");
+      setEyeOuterColor("#C8963E");
+      setEyeInnerColor("#09162D");
+      setIncludeLogo(true);
+      showToast("Switched to 'Scan to Connect' Card Frame.");
+    } else if (newVariant === "circular-stamp") {
+      setDarkColor("#09162D");
+      setLightColor("#FFFFFF");
+      setEyeOuterColor("#09162D");
+      setEyeInnerColor("#09162D");
+      setIncludeLogo(false);
+      showToast("Switched to Circular Packaging Stamp.");
+    } else if (newVariant === "inverted-metal") {
+      setActivePreset("luxury-dark");
+      setDarkColor("#E3B15F");
+      setLightColor("#09162D");
+      setEyeOuterColor("#C8963E");
+      setEyeInnerColor("#FFFFFF");
+      setModuleShape("rounded");
+      setEyeShape("rounded");
+      setIncludeLogo(true);
+      showToast("Switched to Luxury Inverted Metal QR.");
+    }
+  };
+
   // Apply Preset
   const handleApplyPreset = (presetKey: QrStylePreset) => {
     setActivePreset(presetKey);
@@ -110,6 +176,8 @@ export function QrStudio({
     setEyeInnerColor(p.eyeInnerColor);
     setModuleShape(p.moduleShape);
     setEyeShape(p.eyeShape);
+    setIncludeLogo(p.includeLogo);
+    setVariant(p.variant);
   };
 
   // Preload logo image
@@ -140,9 +208,13 @@ export function QrStudio({
       canvasRef.current,
       {
         url: qrPayload,
+        variant,
+        ctaText,
+        ctaSubtext,
+        stampText,
         size: 1024,
         margin,
-        errorCorrectionLevel: "H",
+        errorCorrectionLevel: variant === "simple" ? "M" : "H",
         darkColor,
         lightColor,
         eyeOuterColor,
@@ -150,16 +222,20 @@ export function QrStudio({
         moduleShape,
         eyeShape,
         logo: {
-          enabled: includeLogo,
+          enabled: includeLogo && variant !== "simple",
           sizeRatio: 0.22,
           backgroundColor: lightColor === "#09162D" ? "#09162D" : "#FFFFFF",
           borderRadius: 24,
         },
       },
-      includeLogo ? logoImageRef.current : null
+      includeLogo && variant !== "simple" ? logoImageRef.current : null
     );
   }, [
     qrPayload,
+    variant,
+    ctaText,
+    ctaSubtext,
+    stampText,
     margin,
     darkColor,
     lightColor,
@@ -174,7 +250,7 @@ export function QrStudio({
     redrawCanvas();
   }, [redrawCanvas]);
 
-  // Download High-Res PNG (300 DPI - 2400x2400)
+  // Download High-Res PNG (300 DPI - 2400x2400 or scaled frame)
   const handleDownloadPng = async () => {
     try {
       const exportCanvas = document.createElement("canvas");
@@ -182,9 +258,13 @@ export function QrStudio({
         exportCanvas,
         {
           url: qrPayload,
+          variant,
+          ctaText,
+          ctaSubtext,
+          stampText,
           size: 2400, // 300+ DPI commercial resolution
           margin,
-          errorCorrectionLevel: "H",
+          errorCorrectionLevel: variant === "simple" ? "M" : "H",
           darkColor,
           lightColor,
           eyeOuterColor,
@@ -192,13 +272,13 @@ export function QrStudio({
           moduleShape,
           eyeShape,
           logo: {
-            enabled: includeLogo,
+            enabled: includeLogo && variant !== "simple",
             sizeRatio: 0.22,
             backgroundColor: lightColor === "#09162D" ? "#09162D" : "#FFFFFF",
             borderRadius: 50,
           },
         },
-        includeLogo ? logoImageRef.current : null
+        includeLogo && variant !== "simple" ? logoImageRef.current : null
       );
 
       exportCanvas.toBlob((blob) => {
@@ -207,12 +287,12 @@ export function QrStudio({
         const a = document.createElement("a");
         a.href = url;
         const slug = currentEmployee ? currentEmployee.slug : "arukamed";
-        a.download = `arukamed-qr-${slug}-300dpi.png`;
+        a.download = `arukamed-qr-${slug}-${variant}-300dpi.png`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        showToast("High-Resolution 300 DPI PNG downloaded successfully!");
+        showToast(`Downloaded 300 DPI PNG (${variant} variant)!`);
       }, "image/png");
     } catch {
       showToast("Failed to generate PNG download. Please try again.");
@@ -224,8 +304,9 @@ export function QrStudio({
     try {
       const svg = await generateSvgQr({
         url: qrPayload,
+        variant,
         margin,
-        errorCorrectionLevel: "H",
+        errorCorrectionLevel: variant === "simple" ? "M" : "H",
         darkColor,
         lightColor,
         eyeOuterColor,
@@ -233,7 +314,7 @@ export function QrStudio({
         moduleShape,
         eyeShape,
         logo: {
-          enabled: includeLogo,
+          enabled: includeLogo && variant !== "simple",
           sizeRatio: 0.22,
         },
       });
@@ -243,7 +324,7 @@ export function QrStudio({
       const a = document.createElement("a");
       a.href = url;
       const slug = currentEmployee ? currentEmployee.slug : "arukamed";
-      a.download = `arukamed-qr-${slug}-vector.svg`;
+      a.download = `arukamed-qr-${slug}-${variant}.svg`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -283,17 +364,29 @@ export function QrStudio({
           <div className="space-y-2 max-w-2xl">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#E3B15F]">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Production Vector & Commercial QR Studio</span>
+              <span>Multi-Variant QR Studio & Card Engine</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold font-display">
-              Enterprise QR Generator & Card Engine
+              QR Code Generator & Visual Variants
             </h2>
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Generate scannable visiting card QRs with Reed-Solomon Level-H 30% error correction, custom Pantone brand palettes, central logo cutouts, and industrial 300+ DPI CMYK print standards.
+              Create simple clean black & white QRs, signature executive branded codes with logos, display card badges with CTA ribbons, or circular packaging stamps for medicine cartons.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => handleSelectVariant("simple")}
+              className={`px-3.5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all ${
+                variant === "simple"
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "bg-white/10 hover:bg-white/20 text-white"
+              }`}
+            >
+              <span>Simple QR</span>
+            </button>
+
             <button
               type="button"
               onClick={handleDownloadPng}
@@ -319,18 +412,160 @@ export function QrStudio({
         </div>
       </div>
 
+      {/* VARIANT PICKER SECTION */}
+      <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 className="font-bold text-slate-900 text-sm font-display flex items-center gap-2">
+              <span className="w-6 h-6 rounded-lg bg-[#09162D] text-[#E3B15F] flex items-center justify-center text-xs font-bold">1</span>
+              <span>Select QR Code Variant</span>
+            </h3>
+            <p className="text-xs text-slate-500">
+              Pick the format suited for your use case — from simple paper prints to premium branded badges.
+            </p>
+          </div>
+          <span className="font-mono text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-semibold self-start sm:self-auto">
+            Active: <span className="text-[#09162D] capitalize font-bold">{variant.replace("-", " ")}</span>
+          </span>
+        </div>
+
+        {/* Visual Variant Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          {[
+            {
+              id: "simple",
+              title: "Simple Minimalist",
+              desc: "Classic black & white, no logo, square matrix, universal compatibility.",
+              icon: "▫️",
+              badge: "Simple & Clean",
+            },
+            {
+              id: "branded",
+              title: "Executive Branded",
+              desc: "Navy & Gold palette with central Aruka emblem or representative photo.",
+              icon: "💎",
+              badge: "Official Brand",
+            },
+            {
+              id: "cta-frame",
+              title: "CTA Card Frame",
+              desc: "Includes 'SCAN TO CONNECT' header ribbon & web slug footer.",
+              icon: "🖼️",
+              badge: "Standees & Badges",
+            },
+            {
+              id: "circular-stamp",
+              title: "Packaging Stamp",
+              desc: "Round sticker badge with curved perimeter text for carton printing.",
+              icon: "⭕",
+              badge: "Medicine Packaging",
+            },
+            {
+              id: "inverted-metal",
+              title: "Luxury Inverted",
+              desc: "Metallic Gold on midnight navy backing for metal & dark NFC cards.",
+              icon: "🌙",
+              badge: "NFC Metal Cards",
+            },
+          ].map((v) => {
+            const isSelected = variant === v.id;
+            return (
+              <button
+                key={v.id}
+                type="button"
+                onClick={() => handleSelectVariant(v.id as QrVariantType)}
+                className={`p-4 rounded-2xl text-left border transition-all flex flex-col justify-between ${
+                  isSelected
+                    ? "border-[#C8963E] ring-2 ring-[#C8963E]/40 bg-[#FAF8F5] shadow-sm"
+                    : "border-slate-200 hover:border-slate-300 bg-white"
+                }`}
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xl">{v.icon}</span>
+                    <span
+                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
+                        isSelected ? "bg-[#09162D] text-[#E3B15F]" : "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      {v.badge}
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-xs text-slate-900">{v.title}</h4>
+                    <p className="text-[11px] text-slate-500 leading-snug mt-1">{v.desc}</p>
+                  </div>
+                </div>
+
+                <div className="mt-3 pt-2 border-t border-slate-100 flex items-center gap-1.5">
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      isSelected ? "bg-[#C8963E]" : "bg-slate-300"
+                    }`}
+                  />
+                  <span className={`text-[10px] font-semibold ${isSelected ? "text-[#09162D]" : "text-slate-400"}`}>
+                    {isSelected ? "Active Variant" : "Select"}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Dynamic Variant Controls */}
+        {variant === "cta-frame" && (
+          <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-2xl grid sm:grid-cols-2 gap-4 animate-in fade-in">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-amber-900">Header Ribbon Banner Text:</label>
+              <input
+                type="text"
+                value={ctaText}
+                onChange={(e) => setCtaText(e.target.value)}
+                className="w-full p-2.5 text-xs border border-amber-300 rounded-xl bg-white font-bold text-slate-900"
+                placeholder="e.g. SCAN TO CONNECT"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-amber-900">Footer Subtitle / Web Slug:</label>
+              <input
+                type="text"
+                value={ctaSubtext}
+                onChange={(e) => setCtaSubtext(e.target.value)}
+                className="w-full p-2.5 text-xs border border-amber-300 rounded-xl bg-white font-mono text-slate-800"
+                placeholder="e.g. connect.arukamed.com/abhishikt"
+              />
+            </div>
+          </div>
+        )}
+
+        {variant === "circular-stamp" && (
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-1 animate-in fade-in">
+            <label className="text-xs font-bold text-slate-800">Perimeter Circular Text (Top Arc):</label>
+            <input
+              type="text"
+              value={stampText}
+              onChange={(e) => setStampText(e.target.value)}
+              className="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-white font-semibold text-slate-900"
+              placeholder="e.g. ARUKAMED PHARMACEUTICALS • B2B NETWORK"
+            />
+          </div>
+        )}
+      </div>
+
       {/* Main Studio Grid */}
       <div className="grid lg:grid-cols-12 gap-8 items-start">
         {/* LEFT COLUMN: Controls & Configurations (7 cols) */}
         <div className="lg:col-span-7 space-y-6">
-          {/* Section 1: Target Destination */}
+          {/* Section 2: Target Destination */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-slate-900 text-sm font-display flex items-center gap-2">
-                <span className="w-6 h-6 rounded-lg bg-[#09162D] text-[#E3B15F] flex items-center justify-center text-xs font-bold">1</span>
+                <span className="w-6 h-6 rounded-lg bg-[#09162D] text-[#E3B15F] flex items-center justify-center text-xs font-bold">2</span>
                 <span>QR Target & Destination</span>
               </h3>
-              <span className="text-[11px] font-mono text-slate-400">Level-H (30% Recovery)</span>
+              <span className="text-[11px] font-mono text-slate-400">
+                {variant === "simple" ? "Error Correction: M (15%)" : "Error Correction: H (30%)"}
+              </span>
             </div>
 
             {/* Target Type Selector Tabs */}
@@ -412,14 +647,21 @@ export function QrStudio({
             )}
           </div>
 
-          {/* Section 2: Brand Styling Presets */}
+          {/* Section 3: Color & Preset Customization */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
-            <h3 className="font-bold text-slate-900 text-sm font-display flex items-center gap-2">
-              <span className="w-6 h-6 rounded-lg bg-[#09162D] text-[#E3B15F] flex items-center justify-center text-xs font-bold">2</span>
-              <span>Aruka Brand Styling & Color Presets</span>
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-slate-900 text-sm font-display flex items-center gap-2">
+                <span className="w-6 h-6 rounded-lg bg-[#09162D] text-[#E3B15F] flex items-center justify-center text-xs font-bold">3</span>
+                <span>Colors & Design Presets</span>
+              </h3>
+              {variant === "simple" && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                  Minimalist Mode
+                </span>
+              )}
+            </div>
 
-            {/* Presets Grid */}
+            {/* Quick Presets Grid */}
             <div className="grid sm:grid-cols-2 gap-3">
               {(Object.keys(QR_PRESETS) as QrStylePreset[]).map((key) => {
                 const preset = QR_PRESETS[key];
@@ -437,7 +679,6 @@ export function QrStudio({
                   >
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="font-bold text-xs text-slate-900">{preset.name}</span>
-                      {/* Swatch preview pills */}
                       <div className="flex items-center gap-1">
                         <span className="w-3.5 h-3.5 rounded-full border border-slate-300" style={{ backgroundColor: preset.darkColor }} />
                         <span className="w-3.5 h-3.5 rounded-full border border-slate-300" style={{ backgroundColor: preset.eyeOuterColor }} />
@@ -460,10 +701,7 @@ export function QrStudio({
                     <input
                       type="color"
                       value={darkColor}
-                      onChange={(e) => {
-                        setDarkColor(e.target.value);
-                        setActivePreset("aruka-gold");
-                      }}
+                      onChange={(e) => setDarkColor(e.target.value)}
                       className="w-8 h-8 rounded-lg border cursor-pointer"
                     />
                     <span className="font-mono text-[10px] text-slate-600 uppercase">{darkColor}</span>
@@ -476,11 +714,9 @@ export function QrStudio({
                     <input
                       type="color"
                       value={eyeOuterColor}
-                      onChange={(e) => {
-                        setEyeOuterColor(e.target.value);
-                        setActivePreset("aruka-gold");
-                      }}
-                      className="w-8 h-8 rounded-lg border cursor-pointer"
+                      disabled={variant === "simple"}
+                      onChange={(e) => setEyeOuterColor(e.target.value)}
+                      className="w-8 h-8 rounded-lg border cursor-pointer disabled:opacity-50"
                     />
                     <span className="font-mono text-[10px] text-slate-600 uppercase">{eyeOuterColor}</span>
                   </div>
@@ -492,11 +728,9 @@ export function QrStudio({
                     <input
                       type="color"
                       value={eyeInnerColor}
-                      onChange={(e) => {
-                        setEyeInnerColor(e.target.value);
-                        setActivePreset("aruka-gold");
-                      }}
-                      className="w-8 h-8 rounded-lg border cursor-pointer"
+                      disabled={variant === "simple"}
+                      onChange={(e) => setEyeInnerColor(e.target.value)}
+                      className="w-8 h-8 rounded-lg border cursor-pointer disabled:opacity-50"
                     />
                     <span className="font-mono text-[10px] text-slate-600 uppercase">{eyeInnerColor}</span>
                   </div>
@@ -508,10 +742,7 @@ export function QrStudio({
                     <input
                       type="color"
                       value={lightColor}
-                      onChange={(e) => {
-                        setLightColor(e.target.value);
-                        setActivePreset("aruka-gold");
-                      }}
+                      onChange={(e) => setLightColor(e.target.value)}
                       className="w-8 h-8 rounded-lg border cursor-pointer"
                     />
                     <span className="font-mono text-[10px] text-slate-600 uppercase">{lightColor}</span>
@@ -521,11 +752,11 @@ export function QrStudio({
             </div>
           </div>
 
-          {/* Section 3: Geometry & Logo Embeds */}
+          {/* Section 4: Shape Geometry & Logo Cutout */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
             <h3 className="font-bold text-slate-900 text-sm font-display flex items-center gap-2">
-              <span className="w-6 h-6 rounded-lg bg-[#09162D] text-[#E3B15F] flex items-center justify-center text-xs font-bold">3</span>
-              <span>Shape Geometry & Brand Logo Cutout</span>
+              <span className="w-6 h-6 rounded-lg bg-[#09162D] text-[#E3B15F] flex items-center justify-center text-xs font-bold">4</span>
+              <span>Geometry & Center Brand Cutout</span>
             </h3>
 
             <div className="grid sm:grid-cols-2 gap-4">
@@ -533,15 +764,16 @@ export function QrStudio({
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold text-slate-700">Data Module Shape:</label>
                 <div className="grid grid-cols-3 gap-2">
-                  {(["rounded", "square", "dots"] as QrModuleShape[]).map((shape) => (
+                  {(["square", "rounded", "dots"] as QrModuleShape[]).map((shape) => (
                     <button
                       key={shape}
                       type="button"
+                      disabled={variant === "simple"}
                       onClick={() => setModuleShape(shape)}
                       className={`py-2 px-2.5 rounded-xl text-xs font-semibold capitalize border transition-all ${
                         moduleShape === shape
                           ? "bg-[#09162D] text-white border-[#09162D]"
-                          : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                          : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 disabled:opacity-50"
                       }`}
                     >
                       {shape}
@@ -554,15 +786,16 @@ export function QrStudio({
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold text-slate-700">Corner Eye Shape:</label>
                 <div className="grid grid-cols-3 gap-2">
-                  {(["rounded", "square", "circle"] as QrEyeShape[]).map((shape) => (
+                  {(["square", "rounded", "circle"] as QrEyeShape[]).map((shape) => (
                     <button
                       key={shape}
                       type="button"
+                      disabled={variant === "simple"}
                       onClick={() => setEyeShape(shape)}
                       className={`py-2 px-2.5 rounded-xl text-xs font-semibold capitalize border transition-all ${
                         eyeShape === shape
                           ? "bg-[#09162D] text-white border-[#09162D]"
-                          : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                          : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 disabled:opacity-50"
                       }`}
                     >
                       {shape}
@@ -578,16 +811,22 @@ export function QrStudio({
                 <input
                   id="includeLogo"
                   type="checkbox"
-                  checked={includeLogo}
+                  disabled={variant === "simple"}
+                  checked={includeLogo && variant !== "simple"}
                   onChange={(e) => setIncludeLogo(e.target.checked)}
-                  className="w-4 h-4 rounded text-[#09162D] accent-[#09162D] cursor-pointer"
+                  className="w-4 h-4 rounded text-[#09162D] accent-[#09162D] cursor-pointer disabled:opacity-50"
                 />
-                <label htmlFor="includeLogo" className="text-xs font-bold text-slate-800 cursor-pointer">
+                <label
+                  htmlFor="includeLogo"
+                  className={`text-xs font-bold cursor-pointer ${
+                    variant === "simple" ? "text-slate-400 line-through" : "text-slate-800"
+                  }`}
+                >
                   Embed Center Brand Emblem / Avatar
                 </label>
               </div>
 
-              {includeLogo && (
+              {includeLogo && variant !== "simple" && (
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -633,7 +872,7 @@ export function QrStudio({
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              Scannable QR
+              Live Scannable QR
             </button>
             <button
               type="button"
@@ -655,7 +894,7 @@ export function QrStudio({
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              300 DPI Print Spec
+              Print Spec
             </button>
           </div>
 
@@ -665,7 +904,7 @@ export function QrStudio({
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Live Scannable QR Matrix
+                  Live Preview: <strong className="text-slate-800 capitalize">{variant.replace("-", " ")}</strong>
                 </span>
                 <span className="text-[10px] font-mono text-[#C8963E] bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                   Ready to Scan
@@ -673,7 +912,11 @@ export function QrStudio({
               </div>
 
               {/* The Live Interactive Canvas */}
-              <div className="mx-auto w-64 h-64 sm:w-72 sm:h-72 p-3 bg-white rounded-3xl border-2 border-slate-200 shadow-inner flex items-center justify-center relative overflow-hidden group">
+              <div
+                className={`mx-auto p-3 bg-white rounded-3xl border-2 border-slate-200 shadow-inner flex items-center justify-center relative overflow-hidden group ${
+                  variant === "cta-frame" ? "w-64 h-80 sm:w-72 sm:h-96" : "w-64 h-64 sm:w-72 sm:h-72"
+                }`}
+              >
                 <canvas
                   ref={canvasRef}
                   className="w-full h-full object-contain rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-[1.02]"
@@ -685,7 +928,7 @@ export function QrStudio({
                   {qrPayload}
                 </p>
                 <p className="text-[11px] text-slate-400">
-                  Point any phone camera or barcode scanner at the code above to test.
+                  Point any smartphone camera at the screen above to test.
                 </p>
               </div>
 
