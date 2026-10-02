@@ -69,25 +69,9 @@ export function B2BSite({ tenant }: B2BSiteProps) {
   const [showComplianceFields, setShowComplianceFields] = useState<boolean>(false);
   const [submittedPhone, setSubmittedPhone] = useState<string>("");
 
-  // Automatically detect and synchronize with system color scheme (default to light)
+  // Main website is permanently in the original light theme
   useEffect(() => {
-    try {
-      if (typeof window !== "undefined" && window.matchMedia) {
-        const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-        const applyTheme = (isDark: boolean) => {
-          const mode = isDark ? "dark" : "light";
-          document.documentElement.setAttribute("data-theme", mode);
-        };
-        applyTheme(mediaQuery.matches);
-        const handler = (e: MediaQueryListEvent) => applyTheme(e.matches);
-        mediaQuery.addEventListener("change", handler);
-        return () => mediaQuery.removeEventListener("change", handler);
-      } else {
-        document.documentElement.setAttribute("data-theme", "light");
-      }
-    } catch {
-      document.documentElement.setAttribute("data-theme", "light");
-    }
+    document.documentElement.setAttribute("data-theme", "light");
   }, []);
 
   const showToast = (msg: string) => {
@@ -276,17 +260,10 @@ export function B2BSite({ tenant }: B2BSiteProps) {
       <header className="sticky top-0 z-40 bg-[var(--bg)] border-b border-[var(--line)] shadow-sm">
         <div className="wrap flex items-center justify-between h-[76px] sm:h-[84px] gap-4 sm:gap-6">
           <a href="#top" className="flex items-center gap-3 shrink-0">
-            {/* Light Theme Logo */}
             <img
               src={tenant.logoUrlLight || "/assets/logos/Wordmark_lightBG.png"}
               alt={tenant.name}
-              className="h-12 sm:h-14 md:h-16 w-auto max-w-[210px] sm:max-w-[270px] md:max-w-[320px] object-contain aspect-[3280/828] [data-theme=dark]_&:hidden dark:hidden"
-            />
-            {/* Dark Theme Logo */}
-            <img
-              src={tenant.logoUrlDark || "/assets/logos/Wordmark_darkBG.png"}
-              alt={tenant.name}
-              className="h-12 sm:h-14 md:h-16 w-auto max-w-[210px] sm:max-w-[270px] md:max-w-[320px] object-contain aspect-[3280/828] hidden [data-theme=dark]_&:block dark:block"
+              className="h-12 sm:h-14 md:h-16 w-auto max-w-[210px] sm:max-w-[270px] md:max-w-[320px] object-contain aspect-[3280/828]"
             />
             <span className="hidden xl:block text-xs font-semibold text-[var(--muted)] border-l border-[var(--line)] pl-3 leading-tight">
               Wholesale
@@ -339,12 +316,7 @@ export function B2BSite({ tenant }: B2BSiteProps) {
               <img
                 src={tenant.logoUrlLight || "/assets/logos/Wordmark_lightBG.png"}
                 alt={tenant.name}
-                className="h-10 sm:h-11 w-auto max-w-[200px] object-contain aspect-[3280/828] [data-theme=dark]_&:hidden dark:hidden"
-              />
-              <img
-                src={tenant.logoUrlDark || "/assets/logos/Wordmark_darkBG.png"}
-                alt={tenant.name}
-                className="h-10 sm:h-11 w-auto max-w-[200px] object-contain aspect-[3280/828] hidden [data-theme=dark]_&:block dark:block"
+                className="h-10 sm:h-11 w-auto max-w-[200px] object-contain aspect-[3280/828]"
               />
               <button
                 onClick={() => setMobileMenuOpen(false)}

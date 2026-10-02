@@ -22,20 +22,6 @@
   --accent-t: var(--accent);
 }
 
-[data-theme="dark"], :root[data-theme="dark"] {
-  --bg: #0A1730;
-  --surface: #0F1F3B;
-  --card: #12264A;
-  --text: #E6ECF6;
-  --muted: #9FB0C9;
-  --line: #243C66;
-  --heading: #F1F5FB;
-  --btn-bg: var(--accent-light);
-  --btn-fg: #0E2444;
-  --link: #9CC0F5;
-  --accent-t: var(--accent-light);
-}
-
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 80px;
@@ -161,11 +147,6 @@ body {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(27, 63, 117, 0.15);
   background-color: #ffffff;
-}
-
-[data-theme="dark"] .field:focus {
-  background-color: var(--surface);
-  box-shadow: 0 0 0 3px rgba(227, 177, 95, 0.2);
 }
 
 .field::placeholder {
