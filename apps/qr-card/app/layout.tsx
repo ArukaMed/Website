@@ -7,6 +7,15 @@ export const metadata: Metadata = {
   title: "Digital Business Card | Aruka Med",
   description: "Official B2B Digital Business Card and Institutional Supply Portal",
   robots: { index: false, follow: false },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.png", type: "image/png", sizes: "192x192" },
+    ],
+    apple: [
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
 };
 
 export default function RootLayout({
