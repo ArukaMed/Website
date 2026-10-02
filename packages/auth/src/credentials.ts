@@ -4,11 +4,11 @@ import { UserRole, type UserRoleType, type UserSession } from "@aegis/types";
 export const SESSION_COOKIE_NAME = "aegis_session";
 export const OPS_SESSION_COOKIE_NAME = "aegis_ops_session";
 
-// Secret used for HMAC session signature
-const DEFAULT_AUTH_SECRET = "arukamed_secure_hmac_auth_secret_2026_production_key_99x";
+// Ephemeral runtime fallback secret if no environment variable is provided
+const EPHEMERAL_DEV_SECRET = crypto.randomBytes(32).toString("hex");
 
 function getAuthSecret(): string {
-  return process.env.INTERNAL_API_SECRET || process.env.AUTH_SECRET || DEFAULT_AUTH_SECRET;
+  return process.env.INTERNAL_API_SECRET || process.env.AUTH_SECRET || EPHEMERAL_DEV_SECRET;
 }
 
 export function hashPassword(plainText: string): string {
@@ -20,14 +20,15 @@ export interface AuthorizedAccount {
   fullName: string;
   role: UserRoleType;
   tenantSlug: string;
-  passwordHash: string;
+  envKey: string;
   allowedPortals: ("admin" | "ops")[];
   description: string;
+  readonly passwordHash?: string;
 }
 
 /**
- * Production-hardened Authorized Accounts.
- * Passwords can also be overridden via environment variables if deployed.
+ * Production Authorized Accounts.
+ * Passwords are never stored in source code and must be configured via environment variables.
  */
 export const AUTHORIZED_ACCOUNTS: AuthorizedAccount[] = [
   {
@@ -35,7 +36,7 @@ export const AUTHORIZED_ACCOUNTS: AuthorizedAccount[] = [
     fullName: "Aruka Administrator",
     role: UserRole.BRAND_ADMIN,
     tenantSlug: "arukamed",
-    passwordHash: hashPassword(process.env.ADMIN_PASSWORD || "ArukaAdmin@2026!"),
+    envKey: "ADMIN_PASSWORD",
     allowedPortals: ["admin", "ops"],
     description: "Brand Admin — Full access to corporate compliance, website CMS & team management",
   },
@@ -44,7 +45,7 @@ export const AUTHORIZED_ACCOUNTS: AuthorizedAccount[] = [
     fullName: "Abhishikt Emmanuel Prakash",
     role: UserRole.FOUNDER,
     tenantSlug: "arukamed",
-    passwordHash: hashPassword(process.env.ABHISHIKT_PASSWORD || "ArukaAdmin@2026!"),
+    envKey: "ABHISHIKT_PASSWORD",
     allowedPortals: ["admin", "ops"],
     description: "Founder & General Manager — Complete executive and HR operational authority",
   },
@@ -53,7 +54,7 @@ export const AUTHORIZED_ACCOUNTS: AuthorizedAccount[] = [
     fullName: "Security Administrator",
     role: UserRole.SUPER_ADMIN,
     tenantSlug: "arukamed",
-    passwordHash: hashPassword(process.env.SUPERADMIN_PASSWORD || "SuperAdmin@Aegis2026!"),
+    envKey: "SUPERADMIN_PASSWORD",
     allowedPortals: ["admin", "ops"],
     description: "Super Admin — System governance & security management",
   },
@@ -62,7 +63,7 @@ export const AUTHORIZED_ACCOUNTS: AuthorizedAccount[] = [
     fullName: "Priya Nair",
     role: UserRole.R_HRO,
     tenantSlug: "arukamed",
-    passwordHash: hashPassword(process.env.HR_PASSWORD || "ArukaHR@2026!"),
+    envKey: "HR_PASSWORD",
     allowedPortals: ["admin"],
     description: "HR Operations Analyst (R-HRO) — Onboarding, address verification & employee records",
   },
@@ -71,7 +72,7 @@ export const AUTHORIZED_ACCOUNTS: AuthorizedAccount[] = [
     fullName: "Vikram Malhotra",
     role: UserRole.R_PAY,
     tenantSlug: "arukamed",
-    passwordHash: hashPassword(process.env.PAYROLL_PASSWORD || "ArukaPayroll@2026!"),
+    envKey: "PAYROLL_PASSWORD",
     allowedPortals: ["admin"],
     description: "Payroll Administrator (R-PAY) — Banking checker, statutory compliance & salary disbursement",
   },
@@ -80,7 +81,7 @@ export const AUTHORIZED_ACCOUNTS: AuthorizedAccount[] = [
     fullName: "Suresh Menon",
     role: UserRole.R_AUD,
     tenantSlug: "arukamed",
-    passwordHash: hashPassword(process.env.AUDITOR_PASSWORD || "ArukaAudit@2026!"),
+    envKey: "AUDITOR_PASSWORD",
     allowedPortals: ["admin"],
     description: "Compliance & ISO Auditor (R-AUD) — Read-only access to access logs and mutation history",
   },
@@ -89,7 +90,7 @@ export const AUTHORIZED_ACCOUNTS: AuthorizedAccount[] = [
     fullName: "Operations Desk",
     role: UserRole.OPS_MANAGER,
     tenantSlug: "arukamed",
-    passwordHash: hashPassword(process.env.OPS_PASSWORD || "ArukaOps@2026!"),
+    envKey: "OPS_PASSWORD",
     allowedPortals: ["ops"],
     description: "Operations Manager — Dispatch queue, cold chain tracking & order verification",
   },
@@ -98,11 +99,27 @@ export const AUTHORIZED_ACCOUNTS: AuthorizedAccount[] = [
     fullName: "Amit Sharma",
     role: UserRole.SALES_REP,
     tenantSlug: "arukamed",
-    passwordHash: hashPassword(process.env.REP_PASSWORD || "AmitSharma@2026!"),
+    envKey: "REP_PASSWORD",
     allowedPortals: ["admin"],
     description: "Sales Representative — Assigned visiting card & inquiry management",
   },
 ];
+
+/**
+ * Resolves password hash dynamically from environment variables.
+ */
+function getExpectedPasswordHash(account: AuthorizedAccount): string | null {
+  const configuredPassword =
+    process.env[account.envKey] ||
+    (account.envKey === "ABHISHIKT_PASSWORD" ? process.env.ADMIN_PASSWORD : undefined) ||
+    process.env.ADMIN_PASSWORD;
+
+  if (!configuredPassword) {
+    return null;
+  }
+
+  return hashPassword(configuredPassword);
+}
 
 /**
  * Validates email, password, and portal permissions.
@@ -131,11 +148,22 @@ export function verifyCredentials(
     };
   }
 
+  const expectedHash = getExpectedPasswordHash(account);
+  if (!expectedHash) {
+    console.error(
+      `[Security Alert] Password not configured for account ${account.email} (${account.envKey}). Set ${account.envKey} in .env`
+    );
+    return {
+      success: false,
+      error: "Account authentication is not configured in this environment. Please set password in .env",
+    };
+  }
+
   const incomingHash = hashPassword(plainPassword);
 
   // Constant-time comparison to prevent timing attacks
   const aBuf = Buffer.from(incomingHash, "hex");
-  const bBuf = Buffer.from(account.passwordHash, "hex");
+  const bBuf = Buffer.from(expectedHash, "hex");
 
   if (aBuf.length !== bBuf.length || !crypto.timingSafeEqual(aBuf, bBuf)) {
     return { success: false, error: "Invalid credentials: password incorrect" };
