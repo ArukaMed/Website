@@ -350,13 +350,14 @@ export function EmployeeHub({
             </div>
           </div>
 
-          {/* Directory Table */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-sm">
+          {/* Directory View: Desktop Table (md+) and Mobile Cards (< md) */}
+          {/* 1. Desktop Table View */}
+          <div className="hidden md:block bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-sm">
             <table className="w-full text-left text-xs table-fixed">
               <thead className="bg-slate-50 text-slate-500 uppercase font-semibold border-b border-slate-200">
                 <tr>
-                  <th className="py-3 px-4 font-semibold text-slate-600 w-[30%]">Employee</th>
-                  <th className="py-3 px-4 font-semibold text-slate-600 w-[24%]">Role & Dept</th>
+                  <th className="py-3 px-4 font-semibold text-slate-600 w-[28%]">Employee</th>
+                  <th className="py-3 px-4 font-semibold text-slate-600 w-[26%]">Role & Dept</th>
                   <th className="py-3 px-4 font-semibold text-slate-600 w-[18%]">Location</th>
                   <th className="py-3 px-4 font-semibold text-slate-600 w-[18%]">Contact</th>
                   <th className="py-3 px-4 font-semibold text-slate-600 text-right w-[10%]">QR Scans</th>
@@ -385,18 +386,18 @@ export function EmployeeHub({
                       title={`Click to view profile of ${emp.firstName} ${emp.lastName}`}
                     >
                       {/* Column 1: Identity */}
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-[#09162D] text-[#E3B15F] flex items-center justify-center font-bold text-xs shadow-sm overflow-hidden shrink-0">
+                      <td className="py-3.5 px-4 align-top">
+                        <div className="flex items-start gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-[#09162D] text-[#E3B15F] flex items-center justify-center font-bold text-xs shadow-sm overflow-hidden shrink-0 mt-0.5">
                             {emp.avatarUrl ? (
                               <img src={emp.avatarUrl} alt={emp.firstName} className="w-full h-full object-cover" />
                             ) : (
                               <span>{initials}</span>
                             )}
                           </div>
-                          <div className="min-w-0">
-                            <div className="font-bold text-slate-900 group-hover:text-[#1B3F73] transition-colors flex items-center gap-1.5 truncate">
-                              <span className="truncate">{emp.firstName} {emp.lastName}</span>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-bold text-slate-900 group-hover:text-[#1B3F73] transition-colors flex flex-wrap items-center gap-1.5 break-words">
+                              <span>{emp.firstName} {emp.lastName}</span>
                               {emp.pronouns && (
                                 <span className="text-[10px] text-slate-400 font-normal shrink-0">({emp.pronouns})</span>
                               )}
@@ -406,40 +407,40 @@ export function EmployeeHub({
                                 </span>
                               )}
                             </div>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className="font-mono text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-semibold shrink-0">
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[10px]">
+                              <span className="font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-semibold shrink-0">
                                 {emp.employeeCode || "EMP-10492"}
                               </span>
-                              <span className="font-mono text-[10px] text-slate-400 truncate">/c/{emp.slug}</span>
+                              <span className="font-mono text-slate-400 break-all">/c/{emp.slug}</span>
                             </div>
                           </div>
                         </div>
                       </td>
 
-                      {/* Column 2: Role & Dept */}
-                      <td className="py-3 px-4">
-                        <div className="font-semibold text-slate-800 truncate">{emp.designation}</div>
-                        <div className="text-[11px] text-slate-500 mt-0.5 truncate">
+                      {/* Column 2: Role & Dept (Wrapped) */}
+                      <td className="py-3.5 px-4 align-top">
+                        <div className="font-semibold text-slate-800 break-words leading-snug">{emp.designation}</div>
+                        <div className="text-[11px] text-slate-500 mt-1 break-words leading-relaxed">
                           {emp.department || emp.division || "Wholesale Sales"}
                         </div>
                       </td>
 
-                      {/* Column 3: Location */}
-                      <td className="py-3 px-4">
-                        <div className="font-medium text-slate-800 truncate">{emp.workLocation || "Kanpur Central Hub"}</div>
-                        <div className="text-[10px] text-slate-500 mt-0.5 truncate">{emp.territoryRegion}</div>
+                      {/* Column 3: Location (Wrapped) */}
+                      <td className="py-3.5 px-4 align-top">
+                        <div className="font-medium text-slate-800 break-words leading-snug">{emp.workLocation || "Kanpur Central Hub"}</div>
+                        <div className="text-[10px] text-slate-500 mt-1 break-words leading-relaxed">{emp.territoryRegion}</div>
                       </td>
 
-                      {/* Column 4: Contact */}
-                      <td className="py-3 px-4 font-mono text-[11px]">
-                        <div className="text-slate-800 font-semibold">{emp.phoneNumber}</div>
-                        <div className="text-slate-400 truncate max-w-[170px]">{emp.email}</div>
+                      {/* Column 4: Contact (Wrapped) */}
+                      <td className="py-3.5 px-4 align-top font-mono text-[11px]">
+                        <div className="text-slate-800 font-semibold break-words">{emp.phoneNumber}</div>
+                        <div className="text-slate-500 break-all text-[11px] mt-0.5">{emp.email}</div>
                       </td>
 
                       {/* Column 5: QR Scans & Navigate Indicator */}
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-3.5 px-4 align-top text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <div className="text-right">
+                          <div className="text-right whitespace-nowrap">
                             <div className="font-bold text-slate-900">{emp.scanCount || 0} scans</div>
                             <div className="text-[10px] text-slate-400">{emp.vcardDownloads || 0} vCards</div>
                           </div>
@@ -460,14 +461,118 @@ export function EmployeeHub({
               </tbody>
             </table>
 
-              {filteredEmployees.length === 0 && (
-                <div className="text-center py-12 text-slate-400">
-                  No employees matched the query or filter criteria.
-                </div>
-              )}
-            </div>
+            {filteredEmployees.length === 0 && (
+              <div className="text-center py-12 text-slate-400">
+                No employees matched the query or filter criteria.
+              </div>
+            )}
           </div>
-        )}
+
+          {/* 2. Mobile Responsive Card List (< md) */}
+          <div className="md:hidden space-y-3">
+            {filteredEmployees.map((emp) => {
+              const initials = `${emp.firstName[0] || ""}${emp.lastName[0] || ""}`.toUpperCase();
+              const isInactive = !emp.isActive || emp.employmentStatus === "Deactivated";
+              const isSelected = selectedEmployeeSlug === emp.slug;
+
+              return (
+                <div
+                  key={emp.id}
+                  onClick={() => {
+                    setSelectedEmployeeSlug(emp.slug);
+                    setViewMode("profile");
+                  }}
+                  className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-sm active:scale-[0.99] ${
+                    isInactive
+                      ? "bg-rose-50/70 border-rose-200 border-l-4 border-l-rose-500 text-rose-950"
+                      : isSelected
+                        ? "bg-blue-50/40 border-[#1B3F73]/30 border-l-4 border-l-[#1B3F73]"
+                        : "bg-white border-slate-200/90 hover:border-slate-300 hover:bg-slate-50/60"
+                  }`}
+                  title={`Click to view profile of ${emp.firstName} ${emp.lastName}`}
+                >
+                  {/* Top: Avatar, Name, Handle, Status */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-11 h-11 rounded-xl bg-[#09162D] text-[#E3B15F] flex items-center justify-center font-bold text-sm shadow-sm overflow-hidden shrink-0">
+                        {emp.avatarUrl ? (
+                          <img src={emp.avatarUrl} alt={emp.firstName} className="w-full h-full object-cover" />
+                        ) : (
+                          <span>{initials}</span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-bold text-sm text-slate-900 flex flex-wrap items-center gap-1.5 break-words">
+                          <span>{emp.firstName} {emp.lastName}</span>
+                          {emp.pronouns && (
+                            <span className="text-[10px] text-slate-400 font-normal shrink-0">({emp.pronouns})</span>
+                          )}
+                          {isInactive && (
+                            <span className="text-[9px] font-bold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded border border-rose-200 shrink-0">
+                              Inactive
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-[10px]">
+                          <span className="font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-semibold shrink-0">
+                            {emp.employeeCode || "EMP-10492"}
+                          </span>
+                          <span className="font-mono text-slate-400 break-all">/c/{emp.slug}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Scans pill and chevron */}
+                    <div className="flex items-center gap-1 text-right shrink-0">
+                      <span className="inline-block px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 text-[10px] font-bold whitespace-nowrap">
+                        {emp.scanCount || 0} scans
+                      </span>
+                      <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Middle: Role & Dept + Location */}
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold block">Role & Dept</span>
+                      <div className="font-semibold text-slate-800 break-words leading-snug mt-0.5">{emp.designation}</div>
+                      <div className="text-[11px] text-slate-500 break-words mt-0.5 leading-snug">
+                        {emp.department || emp.division || "Wholesale Sales"}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold block">Location</span>
+                      <div className="font-medium text-slate-800 break-words leading-snug mt-0.5">{emp.workLocation || "Kanpur Central Hub"}</div>
+                      <div className="text-[10px] text-slate-500 break-words mt-0.5">{emp.territoryRegion}</div>
+                    </div>
+                  </div>
+
+                  {/* Bottom: Contact */}
+                  <div className="mt-2.5 pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-slate-600">
+                    <div className="flex items-center gap-1.5 font-semibold text-slate-800">
+                      <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                      <span>{emp.phoneNumber}</span>
+                    </div>
+                    <div className="text-slate-500 break-all text-[10px]">
+                      {emp.email}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {filteredEmployees.length === 0 && (
+              <div className="bg-white rounded-2xl border border-slate-200/90 text-center py-12 text-slate-400">
+                No employees matched the query or filter criteria.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* MODE 2: HYBRID CARD-TAB EMPLOYEE PROFILE VIEW                             */}
